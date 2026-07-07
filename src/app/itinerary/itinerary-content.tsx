@@ -3,6 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import type { ItineraryPlanResponse } from "@/lib/types";
 import { getItineraryPlan } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-client";
 import { BudgetSection } from "@/components/itinerary/budget-section";
@@ -27,8 +29,18 @@ export function ItineraryContent() {
   const travelStartDate = params.get("travel_start_date");
   const originCity = params.get("origin_city") ?? "Your City";
 
+  const queryKey = ["itinerary-plan", destination, days, budget, travelers, travelerType, travelStartDate];
+  // Reloading this page used to re-run the full ~30-60s LLM generation every
+  // time (confirmed live: 47s), and since generation isn't deterministic could
+  // even hand back a different itinerary than what the user was just looking
+  // at. Cache the fetched result in sessionStorage keyed by the exact trip
+  // params, so a reload of the *same* itinerary restores instantly instead of
+  // regenerating. A genuinely new set of params (different trip) still fetches
+  // fresh, since the storage key changes.
+  const storageKey = `itinerary-plan:${JSON.stringify(queryKey)}`;
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["itinerary-plan", destination, days, budget, travelers, travelerType, travelStartDate],
+    queryKey,
     queryFn: () =>
       getItineraryPlan({
         destination,
@@ -41,7 +53,26 @@ export function ItineraryContent() {
       }),
     enabled: Boolean(destination),
     retry: 1,
+    staleTime: Infinity,
+    initialData: () => {
+      if (typeof window === "undefined") return undefined;
+      try {
+        const cached = sessionStorage.getItem(storageKey);
+        return cached ? (JSON.parse(cached) as ItineraryPlanResponse) : undefined;
+      } catch {
+        return undefined;
+      }
+    },
   });
+
+  useEffect(() => {
+    if (!data) return;
+    try {
+      sessionStorage.setItem(storageKey, JSON.stringify(data));
+    } catch {
+      // storage full/blocked — reload will just regenerate, not fatal
+    }
+  }, [data, storageKey]);
 
   if (!destination) {
     return (
