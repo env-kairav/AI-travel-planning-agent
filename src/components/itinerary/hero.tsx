@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { Icon } from "@/components/icon";
-import type { ItineraryPlan } from "@/lib/types";
+import { SectionEditor } from "@/components/itinerary/section-editor";
+import type { HeroSectionData, ItineraryPlan } from "@/lib/types";
 
 function formatDateRange(startDate: string | null, days: number): string {
   if (!startDate) return "Flexible dates";
@@ -14,7 +15,15 @@ function formatDateRange(startDate: string | null, days: number): string {
   return `${fmt(start)} – ${fmt(end)}, ${end.getFullYear()}`;
 }
 
-export function ItineraryHero({ plan, originCity }: { plan: ItineraryPlan; originCity: string }) {
+export function ItineraryHero({
+  plan,
+  originCity,
+  onUpdate,
+}: {
+  plan: ItineraryPlan;
+  originCity: string;
+  onUpdate?: (data: HeroSectionData) => void;
+}) {
   const content = plan.itinerary_plan;
   const totalLocations = content.days.reduce((sum, d) => sum + d.activities.length, 0);
 
@@ -47,14 +56,22 @@ export function ItineraryHero({ plan, originCity }: { plan: ItineraryPlan; origi
           <span className="block text-primary capitalize">{plan.destination}</span>
         </motion.h1>
 
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-muted-foreground max-w-xl mx-auto mb-8"
+          className="flex items-center justify-center gap-2 flex-wrap mb-8"
         >
-          {content.tagline}
-        </motion.p>
+          <p className="text-muted-foreground max-w-xl">{content.tagline}</p>
+          {onUpdate && (
+            <SectionEditor<HeroSectionData>
+              section="hero"
+              plan={plan}
+              placeholder="e.g. make the tagline punchier, or mention the honeymoon vibe"
+              onApply={onUpdate}
+            />
+          )}
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 8 }}

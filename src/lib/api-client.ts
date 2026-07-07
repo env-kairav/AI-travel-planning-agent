@@ -6,6 +6,7 @@ import type {
   Attraction,
   ChatMessage,
   ChatResponse,
+  ClarificationPrompt,
   CostSummary,
   Destination,
   Hotel,
@@ -105,7 +106,7 @@ export function getItineraryGenerationStatus(jobId: string): Promise<GenerationJ
 }
 
 export type SectionRegenerateRequest = {
-  section: "days" | "tips" | "packing";
+  section: "days" | "tips" | "packing" | "hero" | "quick_ref";
   section_index?: number;
   destination: string;
   days: number;
@@ -115,9 +116,19 @@ export type SectionRegenerateRequest = {
   travel_start_date?: string | null;
   user_instructions?: string;
   current_plan?: unknown;
+  /** False on resubmission after already answering one clarifying question —
+   * forces the backend to give a direct answer instead of asking again. */
+  allow_clarification?: boolean;
 };
 
-export function regenerateSection<T>(req: SectionRegenerateRequest): Promise<{ section: string; section_index: number | null; data: T }> {
+export type SectionRegenerateResponse<T> = {
+  section: string;
+  section_index: number | null;
+  data?: T;
+  clarification?: ClarificationPrompt;
+};
+
+export function regenerateSection<T>(req: SectionRegenerateRequest): Promise<SectionRegenerateResponse<T>> {
   return post(`/api/itinerary/section`, req);
 }
 

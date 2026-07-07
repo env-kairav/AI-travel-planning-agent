@@ -3,8 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import type { ItineraryPlanResponse } from "@/lib/types";
+import { useEffect, useState } from "react";
+import type { HeroSectionData, ItineraryDay, ItineraryPlan, ItineraryPlanResponse, Packing, QuickRef, Tip } from "@/lib/types";
 import { ApiError, getItineraryGenerationStatus, startItineraryGeneration } from "@/lib/api-client";
 import { BudgetSection } from "@/components/itinerary/budget-section";
 import { DayTimeline, SectionHeading } from "@/components/itinerary/day-timeline";
@@ -38,13 +38,23 @@ export function ItineraryContent() {
   // fresh, since the storage key changes.
   const storageKey = `itinerary-plan:${JSON.stringify(queryKey)}`;
 
-  const cachedResult = useMemo<ItineraryPlanResponse | undefined>(() => {
-    if (typeof window === "undefined") return undefined;
+  // sessionStorage is only readable client-side, so the very first client render
+  // (hydration) must produce the same output as the server render — which never
+  // has a cache — or React throws a hydration mismatch and remounts the whole
+  // tree. Start at `undefined` on both server and client, and only read the real
+  // cache from an effect (post-hydration). `mounted` also gates the generation
+  // queries below so they don't fire a real generation request in the single tick
+  // before the cache read resolves.
+  const [mounted, setMounted] = useState(false);
+  const [cachedResult, setCachedResult] = useState<ItineraryPlanResponse | undefined>(undefined);
+
+  useEffect(() => {
+    setMounted(true);
     try {
       const cached = sessionStorage.getItem(storageKey);
-      return cached ? (JSON.parse(cached) as ItineraryPlanResponse) : undefined;
+      setCachedResult(cached ? (JSON.parse(cached) as ItineraryPlanResponse) : undefined);
     } catch {
-      return undefined;
+      setCachedResult(undefined);
     }
   }, [storageKey]);
 
@@ -64,7 +74,7 @@ export function ItineraryContent() {
         travel_start_date: travelStartDate,
         origin_city: originCity !== "Your City" ? originCity : undefined,
       }),
-    enabled: Boolean(destination) && !cachedResult,
+    enabled: mounted && Boolean(destination) && !cachedResult,
     staleTime: Infinity,
     retry: 0,
   });
@@ -84,18 +94,34 @@ export function ItineraryContent() {
   const data = cachedResult ?? (statusData?.status === "complete" ? (statusData.result ?? undefined) : undefined);
   const jobFailed = statusData?.status === "error";
   const isError = !cachedResult && (jobFailed || Boolean(startError) || Boolean(statusError));
-  const isLoading = !cachedResult && !isError && !data;
+  const isLoading = !mounted || (!cachedResult && !isError && !data);
 
   const [savedItinerary, setSavedItinerary] = useState<{ id: string; shareToken: string } | null>(null);
 
+  // Section edits apply here rather than mutating the query cache directly. Reset
+  // whenever a genuinely new itinerary is fetched (storageKey changes) — adjusted
+  // during render (React's recommended pattern for "reset state when a prop
+  // changes"), not in an effect, to avoid an extra cascading render pass.
+  const [planOverride, setPlanOverride] = useState<ItineraryPlan | null>(null);
+  const [prevStorageKey, setPrevStorageKey] = useState(storageKey);
+  if (storageKey !== prevStorageKey) {
+    setPrevStorageKey(storageKey);
+    setPlanOverride(null);
+  }
+
+  const plan = planOverride ?? data?.plan;
+
+  // Persists both the initial fetch AND any section edits made afterward — a
+  // same-session reload should show what the user was actually looking at, not
+  // silently revert their edits back to the original generation.
   useEffect(() => {
-    if (!data) return;
+    if (!data || !plan) return;
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify(data));
+      sessionStorage.setItem(storageKey, JSON.stringify({ ...data, plan }));
     } catch {
       // storage full/blocked — reload will just regenerate, not fatal
     }
-  }, [data, storageKey]);
+  }, [data, plan, storageKey]);
 
   if (!destination) {
     return (
@@ -124,13 +150,25 @@ export function ItineraryContent() {
     );
   }
 
-  if (!data) return null;
-  const { plan } = data;
+  if (!plan) return null;
   const content = plan.itinerary_plan;
+
+  function patchContent(patch: Partial<ItineraryPlan["itinerary_plan"]>) {
+    setPlanOverride({
+      ...(plan as ItineraryPlan),
+      itinerary_plan: { ...(plan as ItineraryPlan).itinerary_plan, ...patch },
+    });
+  }
+
+  function updateDay(dayIndex: number, newDay: ItineraryDay) {
+    const days = [...content.days];
+    days[dayIndex] = newDay;
+    patchContent({ days });
+  }
 
   return (
     <div>
-      <ItineraryHero plan={plan} originCity={originCity} />
+      <ItineraryHero plan={plan} originCity={originCity} onUpdate={(data: HeroSectionData) => patchContent(data)} />
 
       <section id="map-section" className="max-w-6xl mx-auto px-6 py-20 print:hidden">
         <SectionHeading eyebrow="Interactive map" title="All Locations at a Glance" />
@@ -139,12 +177,22 @@ export function ItineraryContent() {
         </div>
       </section>
 
-      <DayTimeline days={content.days} />
+      <DayTimeline days={content.days} plan={plan} onDayUpdate={updateDay} />
       <BudgetSection cost={plan.cost_summary} hotelName={plan.hotel} days={plan.days} />
-      <TipsSection tips={content.tips} destination={plan.destination} />
-      <PackingSection packing={content.packing} savedId={savedItinerary?.id} />
+      <TipsSection
+        tips={content.tips}
+        destination={plan.destination}
+        plan={plan}
+        onUpdate={(data: { tips: Tip[] }) => patchContent({ tips: data.tips })}
+      />
+      <PackingSection
+        packing={content.packing}
+        savedId={savedItinerary?.id}
+        plan={plan}
+        onUpdate={(data: Packing) => patchContent({ packing: data })}
+      />
       <SourcesSection sources={plan.sources} />
-      <QuickRefSection qr={content.quick_ref} />
+      <QuickRefSection qr={content.quick_ref} plan={plan} onUpdate={(data: QuickRef) => patchContent({ quick_ref: data })} />
 
       <ItineraryActionBar plan={plan} onSaved={(id, shareToken) => setSavedItinerary({ id, shareToken })} />
     </div>

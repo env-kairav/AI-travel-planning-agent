@@ -114,6 +114,15 @@ export type ItineraryDay = {
   activities: Activity[];
 };
 
+/** Shape returned by the "hero" section edit — a subset of ItineraryPlanContent. */
+export type HeroSectionData = {
+  tagline: string;
+  hero_image_seed: string;
+  weather_label: string;
+  weather_icon: string;
+  hotel_area: string;
+};
+
 export type ItineraryPlanContent = {
   tagline: string;
   hero_image_seed: string;

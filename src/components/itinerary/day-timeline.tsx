@@ -3,16 +3,25 @@
 import { motion } from "framer-motion";
 import { Clock } from "lucide-react";
 import { RichText } from "@/components/rich-text";
+import { SectionEditor } from "@/components/itinerary/section-editor";
 import { dayTheme } from "@/lib/day-theme";
-import type { ItineraryDay } from "@/lib/types";
+import type { ItineraryDay, ItineraryPlan } from "@/lib/types";
 
-export function DayTimeline({ days }: { days: ItineraryDay[] }) {
+export function DayTimeline({
+  days,
+  plan,
+  onDayUpdate,
+}: {
+  days: ItineraryDay[];
+  plan?: ItineraryPlan;
+  onDayUpdate?: (dayIndex: number, data: ItineraryDay) => void;
+}) {
   return (
     <section id="itinerary" className="max-w-4xl mx-auto px-6 py-20">
       <SectionHeading eyebrow="Day by day" title="Your Itinerary" />
 
       <div className="space-y-16 mt-14">
-        {days.map((day) => {
+        {days.map((day, dayIndex) => {
           const t = dayTheme(day.number);
           return (
             <div key={day.number}>
@@ -25,11 +34,22 @@ export function DayTimeline({ days }: { days: ItineraryDay[] }) {
                     {String(day.number).padStart(2, "0")}
                   </span>
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-xs tracking-widest uppercase mb-1" style={{ color: t.hex }}>
                     {day.weekday} · {day.date}
                   </p>
-                  <h3 className="font-heading text-2xl md:text-3xl font-bold text-foreground">{day.title}</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-heading text-2xl md:text-3xl font-bold text-foreground">{day.title}</h3>
+                    {plan && onDayUpdate && (
+                      <SectionEditor<ItineraryDay>
+                        section="days"
+                        sectionIndex={dayIndex}
+                        plan={plan}
+                        placeholder="e.g. swap the museum for something outdoors, add a beach stop"
+                        onApply={(data) => onDayUpdate(dayIndex, data)}
+                      />
+                    )}
+                  </div>
                   <p className="text-muted-foreground text-sm mt-1">{day.subtitle}</p>
                 </div>
               </div>

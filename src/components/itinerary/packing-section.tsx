@@ -4,9 +4,10 @@ import { Heart, Shirt, Star } from "lucide-react";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Icon } from "@/components/icon";
+import { SectionEditor } from "@/components/itinerary/section-editor";
 import { setPackingState } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
-import type { Packing, PackingChecklistState } from "@/lib/types";
+import type { ItineraryPlan, Packing, PackingChecklistState } from "@/lib/types";
 import { SectionHeading } from "./day-timeline";
 
 /**
@@ -59,11 +60,15 @@ export function PackingSection({
   packing,
   savedId,
   initialState,
+  plan,
+  onUpdate,
 }: {
   packing: Packing;
   /** Saved itinerary ID — checklist only persists to the DB once this is set. */
   savedId?: string | null;
   initialState?: PackingChecklistState;
+  plan?: ItineraryPlan;
+  onUpdate?: (data: Packing) => void;
 }) {
   const [state, setState] = useState<PackingChecklistState>(initialState ?? {});
   const WeatherIcon = <Icon name={packing.weather_icon} className="w-4 h-4" />;
@@ -86,7 +91,17 @@ export function PackingSection({
 
   return (
     <section id="packing" className="max-w-4xl mx-auto px-6 py-20 border-t border-border">
-      <SectionHeading eyebrow="Don't forget" title="Packing Checklist" />
+      <div className="flex items-center justify-center gap-2 flex-wrap">
+        <SectionHeading eyebrow="Don't forget" title="Packing Checklist" />
+        {plan && onUpdate && (
+          <SectionEditor<Packing>
+            section="packing"
+            plan={plan}
+            placeholder="e.g. add hiking gear, remove the beach items"
+            onApply={onUpdate}
+          />
+        )}
+      </div>
       {!savedId && (
         <p className="text-xs text-muted-foreground text-center mt-3">
           Save this itinerary to keep your checklist progress — otherwise it resets when you leave.
