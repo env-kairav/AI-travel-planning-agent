@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock } from "lucide-react";
+import { Clock, Loader2 } from "lucide-react";
 import { RichText } from "@/components/rich-text";
 import { SectionEditor } from "@/components/itinerary/section-editor";
+import { Skeleton } from "@/components/ui/skeleton";
 import { dayTheme } from "@/lib/day-theme";
 import type { ItineraryDay, ItineraryPlan } from "@/lib/types";
 
@@ -11,14 +12,31 @@ export function DayTimeline({
   days,
   plan,
   onDayUpdate,
+  totalDays,
+  isGenerating,
 }: {
   days: ItineraryDay[];
   plan?: ItineraryPlan;
   onDayUpdate?: (dayIndex: number, data: ItineraryDay) => void;
+  /** Requested trip length — used to size the "N more days coming" placeholders
+   *  while generation is still in progress. Defaults to `days.length` (nothing
+   *  left to placeholder) when omitted, e.g. on the static /share page. */
+  totalDays?: number;
+  isGenerating?: boolean;
 }) {
+  const remaining = isGenerating ? Math.max(0, (totalDays ?? days.length) - days.length) : 0;
+
   return (
     <section id="itinerary" className="max-w-4xl mx-auto px-6 py-20">
       <SectionHeading eyebrow="Day by day" title="Your Itinerary" />
+      {isGenerating && (
+        <p className="flex items-center justify-center gap-2 text-sm text-accent-foreground mt-4">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          {days.length === 0
+            ? "Crafting your day-by-day plan…"
+            : `${days.length} of ${totalDays ?? days.length} days ready — still writing the rest…`}
+        </p>
+      )}
 
       <div className="space-y-16 mt-14">
         {days.map((day, dayIndex) => {
@@ -105,8 +123,32 @@ export function DayTimeline({
             </div>
           );
         })}
+        {Array.from({ length: remaining }).map((_, i) => (
+          <GeneratingDayPlaceholder key={`generating-${i}`} dayNumber={days.length + i + 1} />
+        ))}
       </div>
     </section>
+  );
+}
+
+function GeneratingDayPlaceholder({ dayNumber }: { dayNumber: number }) {
+  return (
+    <div>
+      <div className="flex items-center gap-5 mb-8">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 border border-border bg-card">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+        <div className="flex-1">
+          <p className="text-xs tracking-widest uppercase mb-1 text-muted-foreground">Generating</p>
+          <h3 className="font-heading text-2xl md:text-3xl font-bold text-muted-foreground">Day {dayNumber}</h3>
+        </div>
+      </div>
+      <div className="pl-8 md:pl-10 space-y-5">
+        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="h-24 rounded-2xl" />
+        <Skeleton className="h-24 rounded-2xl" />
+      </div>
+    </div>
   );
 }
 

@@ -49,6 +49,10 @@ export function ItineraryContent() {
   const [cachedResult, setCachedResult] = useState<ItineraryPlanResponse | undefined>(undefined);
 
   useEffect(() => {
+    // sessionStorage is a real external system unavailable during SSR/the
+    // hydration render — there's no render-time-adjustment equivalent here
+    // (unlike the storageKey comparison below), an effect is the correct tool.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     try {
       const cached = sessionStorage.getItem(storageKey);
@@ -84,16 +88,25 @@ export function ItineraryContent() {
     queryKey: ["itinerary-job-status", jobId],
     queryFn: () => getItineraryGenerationStatus(jobId as string),
     enabled: Boolean(jobId) && !cachedResult,
+    // Snappier than a typical poll — the backend now writes partial progress
+    // (structure first, then each day-chunk) as it goes, so polling faster
+    // makes the itinerary visibly stream in rather than jump once at the end.
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      return status === "complete" || status === "error" ? false : 2500;
+      return status === "complete" || status === "error" ? false : 1500;
     },
     retry: 0,
   });
 
-  const data = cachedResult ?? (statusData?.status === "complete" ? (statusData.result ?? undefined) : undefined);
+  // Once the backend has written *any* progress — even mid-generation — render
+  // it. `result` is non-null starting from "in_progress", not just "complete".
+  const data = cachedResult ?? (statusData?.result ?? undefined);
   const jobFailed = statusData?.status === "error";
   const isError = !cachedResult && (jobFailed || Boolean(startError) || Boolean(statusError));
+  const isComplete = Boolean(cachedResult) || statusData?.status === "complete";
+  const isGenerating = !cachedResult && !isComplete && !isError && Boolean(data);
+  // Full-page loader only for the brief window before the *first* progress
+  // write lands (trip structure isn't ready yet, nothing meaningful to show).
   const isLoading = !mounted || (!cachedResult && !isError && !data);
 
   const [savedItinerary, setSavedItinerary] = useState<{ id: string; shareToken: string } | null>(null);
@@ -113,15 +126,18 @@ export function ItineraryContent() {
 
   // Persists both the initial fetch AND any section edits made afterward — a
   // same-session reload should show what the user was actually looking at, not
-  // silently revert their edits back to the original generation.
+  // silently revert their edits back to the original generation. Gated on
+  // isComplete — otherwise every progress tick during generation would cache
+  // a partial itinerary, and a reload mid-generation would get stuck showing
+  // an itinerary that will never finish (polling only resumes from scratch).
   useEffect(() => {
-    if (!data || !plan) return;
+    if (!isComplete || !data || !plan) return;
     try {
       sessionStorage.setItem(storageKey, JSON.stringify({ ...data, plan }));
     } catch {
       // storage full/blocked — reload will just regenerate, not fatal
     }
-  }, [data, plan, storageKey]);
+  }, [isComplete, data, plan, storageKey]);
 
   if (!destination) {
     return (
@@ -166,35 +182,59 @@ export function ItineraryContent() {
     patchContent({ days });
   }
 
+  // Editing (and saving) only make sense once generation has actually
+  // finished — mid-stream, a day you'd edit might still get overwritten by
+  // the next poll, and "Save" would persist a trip that's still missing days.
   return (
     <div>
-      <ItineraryHero plan={plan} originCity={originCity} onUpdate={(data: HeroSectionData) => patchContent(data)} />
+      <ItineraryHero
+        plan={plan}
+        originCity={originCity}
+        onUpdate={isComplete ? (data: HeroSectionData) => patchContent(data) : undefined}
+      />
 
       <section id="map-section" className="max-w-6xl mx-auto px-6 py-20 avoid-print-break">
         <SectionHeading eyebrow="Interactive map" title="All Locations at a Glance" />
         <div className="mt-10">
-          <ItineraryMap days={content.days} centerLat={plan.destination_lat} centerLng={plan.destination_lon} />
+          <ItineraryMap
+            days={content.days}
+            centerLat={plan.destination_lat}
+            centerLng={plan.destination_lon}
+            isGenerating={isGenerating}
+          />
         </div>
       </section>
 
-      <DayTimeline days={content.days} plan={plan} onDayUpdate={updateDay} />
+      <DayTimeline
+        days={content.days}
+        plan={plan}
+        onDayUpdate={isComplete ? updateDay : undefined}
+        totalDays={plan.days}
+        isGenerating={isGenerating}
+      />
       <BudgetSection cost={plan.cost_summary} hotelName={plan.hotel} days={plan.days} />
       <TipsSection
         tips={content.tips}
         destination={plan.destination}
         plan={plan}
-        onUpdate={(data: { tips: Tip[] }) => patchContent({ tips: data.tips })}
+        onUpdate={isComplete ? (data: { tips: Tip[] }) => patchContent({ tips: data.tips }) : undefined}
       />
       <PackingSection
         packing={content.packing}
         savedId={savedItinerary?.id}
         plan={plan}
-        onUpdate={(data: Packing) => patchContent({ packing: data })}
+        onUpdate={isComplete ? (data: Packing) => patchContent({ packing: data }) : undefined}
       />
       <SourcesSection sources={plan.sources} />
-      <QuickRefSection qr={content.quick_ref} plan={plan} onUpdate={(data: QuickRef) => patchContent({ quick_ref: data })} />
+      <QuickRefSection
+        qr={content.quick_ref}
+        plan={plan}
+        onUpdate={isComplete ? (data: QuickRef) => patchContent({ quick_ref: data }) : undefined}
+      />
 
-      <ItineraryActionBar plan={plan} onSaved={(id, shareToken) => setSavedItinerary({ id, shareToken })} />
+      {isComplete && (
+        <ItineraryActionBar plan={plan} onSaved={(id, shareToken) => setSavedItinerary({ id, shareToken })} />
+      )}
     </div>
   );
 }

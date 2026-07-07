@@ -2,6 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import { DayRoute } from "@/components/itinerary/day-route";
@@ -95,14 +96,31 @@ export function ItineraryMap({
   days,
   centerLat,
   centerLng,
+  isGenerating,
 }: {
   days: ItineraryDay[];
   centerLat: number;
   centerLng: number;
+  isGenerating?: boolean;
 }) {
   const points = useMemo(() => buildPoints(days), [days]);
   const dayNumbers = useMemo(() => days.map((d) => d.number), [days]);
   const [visibleDays, setVisibleDays] = useState<Set<number>>(new Set(dayNumbers));
+
+  // While an itinerary is still streaming in, `days` grows over time — without
+  // this, a day number that didn't exist yet when `visibleDays` was first
+  // initialized would never be considered "visible" and its markers would be
+  // silently filtered out once it finally arrived. Adjusted during render
+  // (React's recommended pattern for "derive state from a changing prop")
+  // rather than an effect, since this is pure derived state, not a sync with
+  // any external system.
+  const [prevDayNumbers, setPrevDayNumbers] = useState(dayNumbers);
+  if (dayNumbers.length !== prevDayNumbers.length) {
+    setPrevDayNumbers(dayNumbers);
+    const next = new Set(visibleDays);
+    for (const n of dayNumbers) next.add(n);
+    setVisibleDays(next);
+  }
 
   function toggleDay(n: number) {
     setVisibleDays((prev) => {
@@ -150,8 +168,15 @@ export function ItineraryMap({
 
       <div className="rounded-2xl overflow-hidden border border-border h-[550px] print:h-[380px] avoid-print-break">
         {points.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-muted-foreground text-sm bg-card">
-            No mappable locations for this itinerary.
+          <div className="h-full flex items-center justify-center text-muted-foreground text-sm bg-card gap-2">
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Locations will appear here as your itinerary is generated…
+              </>
+            ) : (
+              "No mappable locations for this itinerary."
+            )}
           </div>
         ) : (
           <MapContainer center={[centerLat, centerLng]} zoom={11} scrollWheelZoom style={{ height: "100%", width: "100%" }}>

@@ -90,9 +90,13 @@ export function getItineraryPlan(req: ItineraryPlanRequest): Promise<ItineraryPl
 // result. Exists because generation takes 30-60s+ (chunked LLM calls), which
 // risks exceeding serverless function duration limits if done as one blocking
 // call. Needs schema_v3.sql applied on the backend (generation_jobs table).
+// "in_progress" carries a partial `result` (structure ready, `days` still
+// filling in chunk by chunk) — the backend writes these as it goes so the
+// frontend can render the itinerary as it's generated instead of showing a
+// blank loader for the full ~1.5-2min.
 export type GenerationJobStatus = {
   id: string;
-  status: "pending" | "complete" | "error";
+  status: "pending" | "in_progress" | "complete" | "error";
   result: ItineraryPlanResponse | null;
   error: string | null;
 };
