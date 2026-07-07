@@ -10,6 +10,7 @@ import type {
   Destination,
   Hotel,
   ItineraryPlanResponse,
+  PackingChecklistState,
   Restaurant,
   SavedItinerary,
   VisaResponse,
@@ -82,6 +83,25 @@ export type ItineraryPlanRequest = {
 
 export function getItineraryPlan(req: ItineraryPlanRequest): Promise<ItineraryPlanResponse> {
   return post<ItineraryPlanResponse>("/api/itinerary/plan", req);
+}
+
+// Async job pattern — kicks off generation and returns immediately, poll for the
+// result. Exists because generation takes 30-60s+ (chunked LLM calls), which
+// risks exceeding serverless function duration limits if done as one blocking
+// call. Needs schema_v3.sql applied on the backend (generation_jobs table).
+export type GenerationJobStatus = {
+  id: string;
+  status: "pending" | "complete" | "error";
+  result: ItineraryPlanResponse | null;
+  error: string | null;
+};
+
+export function startItineraryGeneration(req: ItineraryPlanRequest): Promise<{ job_id: string; status: string }> {
+  return post("/api/itinerary/plan/start", req);
+}
+
+export function getItineraryGenerationStatus(jobId: string): Promise<GenerationJobStatus> {
+  return request<GenerationJobStatus>(`/api/itinerary/plan/status/${jobId}`);
 }
 
 export type SectionRegenerateRequest = {
@@ -189,6 +209,13 @@ export function setItineraryVisibility(id: string, is_public: boolean): Promise<
   return request(`/api/itineraries/${id}/visibility`, {
     method: "PATCH",
     body: JSON.stringify({ is_public }),
+  });
+}
+
+export function setPackingState(id: string, packing_state: PackingChecklistState): Promise<{ id: string; packing_state: PackingChecklistState }> {
+  return request(`/api/itineraries/${id}/packing`, {
+    method: "PATCH",
+    body: JSON.stringify({ packing_state }),
   });
 }
 

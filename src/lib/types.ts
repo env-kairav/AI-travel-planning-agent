@@ -271,6 +271,9 @@ export type VisaResponse = {
 
 // ─── Save / share ─────────────────────────────────────────────────────────
 
+/** Packing checklist state — category name -> {item index -> checked}. */
+export type PackingChecklistState = Record<string, Record<number, boolean>>;
+
 export type SavedItinerary = {
   id: string;
   share_token: string;
@@ -283,6 +286,7 @@ export type SavedItinerary = {
   cover_image_url?: string;
   plan_json?: ItineraryPlan;
   html_content?: string;
+  packing_state?: PackingChecklistState;
   is_public: boolean;
   view_count?: number;
   created_at?: string;

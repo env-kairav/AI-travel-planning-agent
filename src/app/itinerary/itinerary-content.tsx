@@ -3,10 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ItineraryPlanResponse } from "@/lib/types";
-import { getItineraryPlan } from "@/lib/api-client";
-import { ApiError } from "@/lib/api-client";
+import { ApiError, getItineraryGenerationStatus, startItineraryGeneration } from "@/lib/api-client";
 import { BudgetSection } from "@/components/itinerary/budget-section";
 import { DayTimeline, SectionHeading } from "@/components/itinerary/day-timeline";
 import { ItineraryHero } from "@/components/itinerary/hero";
@@ -39,10 +38,24 @@ export function ItineraryContent() {
   // fresh, since the storage key changes.
   const storageKey = `itinerary-plan:${JSON.stringify(queryKey)}`;
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey,
+  const cachedResult = useMemo<ItineraryPlanResponse | undefined>(() => {
+    if (typeof window === "undefined") return undefined;
+    try {
+      const cached = sessionStorage.getItem(storageKey);
+      return cached ? (JSON.parse(cached) as ItineraryPlanResponse) : undefined;
+    } catch {
+      return undefined;
+    }
+  }, [storageKey]);
+
+  // Async job pattern: start generation (returns immediately), then poll for
+  // completion. Exists because generation can take 30-60s+ — a single blocking
+  // request risks exceeding serverless function duration limits. Skipped
+  // entirely when a cached result already exists for these exact params.
+  const { data: startData, error: startError } = useQuery({
+    queryKey: [...queryKey, "start"],
     queryFn: () =>
-      getItineraryPlan({
+      startItineraryGeneration({
         destination,
         days,
         budget,
@@ -51,19 +64,29 @@ export function ItineraryContent() {
         travel_start_date: travelStartDate,
         origin_city: originCity !== "Your City" ? originCity : undefined,
       }),
-    enabled: Boolean(destination),
-    retry: 1,
+    enabled: Boolean(destination) && !cachedResult,
     staleTime: Infinity,
-    initialData: () => {
-      if (typeof window === "undefined") return undefined;
-      try {
-        const cached = sessionStorage.getItem(storageKey);
-        return cached ? (JSON.parse(cached) as ItineraryPlanResponse) : undefined;
-      } catch {
-        return undefined;
-      }
-    },
+    retry: 0,
   });
+
+  const jobId = startData?.job_id;
+  const { data: statusData, error: statusError } = useQuery({
+    queryKey: ["itinerary-job-status", jobId],
+    queryFn: () => getItineraryGenerationStatus(jobId as string),
+    enabled: Boolean(jobId) && !cachedResult,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "complete" || status === "error" ? false : 2500;
+    },
+    retry: 0,
+  });
+
+  const data = cachedResult ?? (statusData?.status === "complete" ? (statusData.result ?? undefined) : undefined);
+  const jobFailed = statusData?.status === "error";
+  const isError = !cachedResult && (jobFailed || Boolean(startError) || Boolean(statusError));
+  const isLoading = !cachedResult && !isError && !data;
+
+  const [savedItinerary, setSavedItinerary] = useState<{ id: string; shareToken: string } | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -85,7 +108,11 @@ export function ItineraryContent() {
   if (isLoading) return <ItineraryLoadingState destination={destination} />;
 
   if (isError) {
-    const message = error instanceof ApiError ? error.message : "Something went wrong generating this itinerary.";
+    const message =
+      statusData?.error ??
+      (startError instanceof ApiError ? startError.message : undefined) ??
+      (statusError instanceof ApiError ? statusError.message : undefined) ??
+      "Something went wrong generating this itinerary.";
     return (
       <div className="max-w-2xl mx-auto px-6 py-24 text-center">
         <SectionHeading eyebrow="Couldn't build this trip" title="Something went wrong" />
@@ -115,11 +142,11 @@ export function ItineraryContent() {
       <DayTimeline days={content.days} />
       <BudgetSection cost={plan.cost_summary} hotelName={plan.hotel} days={plan.days} />
       <TipsSection tips={content.tips} destination={plan.destination} />
-      <PackingSection packing={content.packing} destination={plan.destination} />
+      <PackingSection packing={content.packing} savedId={savedItinerary?.id} />
       <SourcesSection sources={plan.sources} />
       <QuickRefSection qr={content.quick_ref} />
 
-      <ItineraryActionBar plan={plan} />
+      <ItineraryActionBar plan={plan} onSaved={(id, shareToken) => setSavedItinerary({ id, shareToken })} />
     </div>
   );
 }

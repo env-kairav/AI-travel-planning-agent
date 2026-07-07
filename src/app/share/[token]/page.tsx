@@ -48,7 +48,7 @@ export default async function SharedItineraryPage({ params }: { params: Promise<
       <DayTimeline days={content.days} />
       <BudgetSection cost={plan.cost_summary} hotelName={plan.hotel} days={plan.days} />
       <TipsSection tips={content.tips} destination={plan.destination} />
-      <PackingSection packing={content.packing} destination={plan.destination} />
+      <PackingSection packing={content.packing} savedId={saved.id} initialState={saved.packing_state} />
       <SourcesSection sources={plan.sources} />
       <QuickRefSection qr={content.quick_ref} />
     </div>

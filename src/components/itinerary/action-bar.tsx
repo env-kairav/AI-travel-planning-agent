@@ -14,7 +14,16 @@ import type { ItineraryPlanResponse } from "@/lib/types";
  * {id: null, error: "..."} rather than a hard error), so this surfaces that as
  * a toast rather than pretending it worked or crashing.
  */
-export function ItineraryActionBar({ plan }: { plan: ItineraryPlanResponse["plan"] }) {
+export function ItineraryActionBar({
+  plan,
+  onSaved,
+}: {
+  plan: ItineraryPlanResponse["plan"];
+  /** Fires whenever a save succeeds (including if it was already cached this
+   * session) — lets the parent page pass the saved ID down to PackingSection
+   * so checklist state can start persisting to the DB. */
+  onSaved?: (id: string, shareToken: string) => void;
+}) {
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [itinId, setItinId] = useState<string | null>(null);
@@ -43,6 +52,7 @@ export function ItineraryActionBar({ plan }: { plan: ItineraryPlanResponse["plan
       setItinId(result.id);
       setShareToken(result.share_token);
       toast.success("Itinerary saved");
+      onSaved?.(result.id, result.share_token);
       return { id: result.id, share_token: result.share_token };
     } catch {
       toast.error("Couldn't reach the server to save this itinerary.");
