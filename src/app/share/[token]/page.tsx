@@ -5,6 +5,7 @@ import { DayTimeline, SectionHeading } from "@/components/itinerary/day-timeline
 import { ItineraryHero } from "@/components/itinerary/hero";
 import { PackingSection } from "@/components/itinerary/packing-section";
 import { QuickRefSection } from "@/components/itinerary/quick-ref-section";
+import { SourcesSection } from "@/components/itinerary/sources-section";
 import { TipsSection } from "@/components/itinerary/tips-section";
 import { ItineraryMap } from "@/components/itinerary/itinerary-map-client";
 
@@ -48,6 +49,7 @@ export default async function SharedItineraryPage({ params }: { params: Promise<
       <BudgetSection cost={plan.cost_summary} hotelName={plan.hotel} days={plan.days} />
       <TipsSection tips={content.tips} destination={plan.destination} />
       <PackingSection packing={content.packing} destination={plan.destination} />
+      <SourcesSection sources={plan.sources} />
       <QuickRefSection qr={content.quick_ref} />
     </div>
   );

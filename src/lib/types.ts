@@ -137,6 +137,14 @@ export type MapLocation = {
   duration_hours?: number;
 };
 
+/** Only present for destinations with no curated DB data (live Tavily web search
+ * fallback) — empty for destinations with real hotel/restaurant/attraction data. */
+export type WebSource = {
+  title: string;
+  url: string;
+  snippet: string;
+};
+
 export type ItineraryPlan = {
   destination: string;
   destination_lat: number;
@@ -151,6 +159,7 @@ export type ItineraryPlan = {
   cost_summary: CostSummary;
   itinerary_plan: ItineraryPlanContent;
   locations: MapLocation[];
+  sources: WebSource[];
   format: "structured_plan";
 };
 

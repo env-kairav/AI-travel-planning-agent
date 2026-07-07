@@ -11,6 +11,7 @@ import { ItineraryHero } from "@/components/itinerary/hero";
 import { ItineraryLoadingState } from "@/components/itinerary/loading-state";
 import { PackingSection } from "@/components/itinerary/packing-section";
 import { QuickRefSection } from "@/components/itinerary/quick-ref-section";
+import { SourcesSection } from "@/components/itinerary/sources-section";
 import { TipsSection } from "@/components/itinerary/tips-section";
 import { ItineraryActionBar } from "@/components/itinerary/action-bar";
 import { ItineraryMap } from "@/components/itinerary/itinerary-map-client";
@@ -84,6 +85,7 @@ export function ItineraryContent() {
       <BudgetSection cost={plan.cost_summary} hotelName={plan.hotel} days={plan.days} />
       <TipsSection tips={content.tips} destination={plan.destination} />
       <PackingSection packing={content.packing} destination={plan.destination} />
+      <SourcesSection sources={plan.sources} />
       <QuickRefSection qr={content.quick_ref} />
 
       <ItineraryActionBar plan={plan} />
