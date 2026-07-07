@@ -29,7 +29,7 @@ export default async function DestinationsPage() {
       </div>
 
       {destinations.length === 0 ? (
-        <p className="text-center text-muted-foreground">Couldn't load destinations right now — try again shortly.</p>
+        <p className="text-center text-muted-foreground">Couldn&apos;t load destinations right now — try again shortly.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {destinations.map((dest) => {

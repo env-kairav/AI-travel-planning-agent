@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Users } from "lucide-react";
-import { resolveIcon } from "@/lib/icon-resolver";
+import { Icon } from "@/components/icon";
 import type { ItineraryPlan } from "@/lib/types";
 
 function formatDateRange(startDate: string | null, days: number): string {
@@ -16,7 +16,6 @@ function formatDateRange(startDate: string | null, days: number): string {
 
 export function ItineraryHero({ plan, originCity }: { plan: ItineraryPlan; originCity: string }) {
   const content = plan.itinerary_plan;
-  const WeatherIcon = resolveIcon(content.weather_icon);
   const totalLocations = content.days.reduce((sum, d) => sum + d.activities.length, 0);
 
   return (
@@ -33,7 +32,7 @@ export function ItineraryHero({ plan, originCity }: { plan: ItineraryPlan; origi
           animate={{ opacity: 1, y: 0 }}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-border mb-8 backdrop-blur-sm"
         >
-          <WeatherIcon className="w-4 h-4 text-accent-foreground" />
+          <Icon name={content.weather_icon} className="w-4 h-4 text-accent-foreground" />
           <span className="text-xs font-medium text-muted-foreground tracking-wider uppercase">{content.weather_label}</span>
         </motion.div>
 

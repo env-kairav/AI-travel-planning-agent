@@ -3,27 +3,32 @@
 import { Heart, Shirt, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { resolveIcon } from "@/lib/icon-resolver";
+import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 import type { Packing } from "@/lib/types";
 import { SectionHeading } from "./day-timeline";
 
 function ChecklistColumn({
-  icon: Icon,
+  icon,
   heading,
   items,
   storageKey,
 }: {
-  icon: React.ElementType;
+  icon: React.ReactNode;
   heading: string;
   items: string[];
   storageKey: string;
 }) {
   const [checked, setChecked] = useState<Record<number, boolean>>({});
 
+  // Deliberately not a lazy useState initializer: /share/[token] server-renders this
+  // component with real data, so the initial client render must match the server's
+  // (empty) output to avoid a hydration mismatch. Reading localStorage only after
+  // mount is the correct SSR-safe pattern here, not just an unoptimized effect.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (raw) setChecked(JSON.parse(raw));
     } catch {
       // ignore corrupt/blocked localStorage
@@ -45,7 +50,7 @@ function ChecklistColumn({
   return (
     <div>
       <h3 className="flex items-center gap-2 text-sm font-semibold text-accent-foreground uppercase tracking-wider mb-4">
-        <Icon className="w-4 h-4" />
+        {icon}
         {heading}
       </h3>
       <div className="space-y-3">
@@ -69,16 +74,20 @@ function ChecklistColumn({
 
 export function PackingSection({ packing, destination }: { packing: Packing; destination: string }) {
   const ns = destination.toLowerCase().replace(/\s+/g, "-");
-  const WeatherIcon = resolveIcon(packing.weather_icon);
 
   return (
     <section id="packing" className="max-w-4xl mx-auto px-6 py-20 border-t border-border">
       <SectionHeading eyebrow="Don't forget" title="Packing Checklist" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-14">
-        <ChecklistColumn icon={Star} heading="Essentials" items={packing.essentials} storageKey={`${ns}-packing-essentials`} />
-        <ChecklistColumn icon={WeatherIcon} heading={packing.weather_category} items={packing.weather_items} storageKey={`${ns}-packing-weather`} />
-        <ChecklistColumn icon={Shirt} heading="Clothing" items={packing.clothing} storageKey={`${ns}-packing-clothing`} />
-        <ChecklistColumn icon={Heart} heading="Health & Misc" items={packing.health} storageKey={`${ns}-packing-health`} />
+        <ChecklistColumn icon={<Star className="w-4 h-4" />} heading="Essentials" items={packing.essentials} storageKey={`${ns}-packing-essentials`} />
+        <ChecklistColumn
+          icon={<Icon name={packing.weather_icon} className="w-4 h-4" />}
+          heading={packing.weather_category}
+          items={packing.weather_items}
+          storageKey={`${ns}-packing-weather`}
+        />
+        <ChecklistColumn icon={<Shirt className="w-4 h-4" />} heading="Clothing" items={packing.clothing} storageKey={`${ns}-packing-clothing`} />
+        <ChecklistColumn icon={<Heart className="w-4 h-4" />} heading="Health & Misc" items={packing.health} storageKey={`${ns}-packing-health`} />
       </div>
     </section>
   );

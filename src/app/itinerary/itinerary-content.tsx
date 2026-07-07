@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getItineraryPlan } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-client";
@@ -44,7 +45,7 @@ export function ItineraryContent() {
   if (!destination) {
     return (
       <div className="max-w-2xl mx-auto px-6 py-24 text-center text-muted-foreground">
-        No destination specified — start from the <a href="/" className="text-primary underline">home page</a>.
+        No destination specified — start from the <Link href="/" className="text-primary underline">home page</Link>.
       </div>
     );
   }
@@ -57,9 +58,9 @@ export function ItineraryContent() {
       <div className="max-w-2xl mx-auto px-6 py-24 text-center">
         <SectionHeading eyebrow="Couldn't build this trip" title="Something went wrong" />
         <p className="text-muted-foreground mt-6">{message}</p>
-        <a href="/" className="inline-block mt-6 text-primary underline">
+        <Link href="/" className="inline-block mt-6 text-primary underline">
           Try again from the home page
-        </a>
+        </Link>
       </div>
     );
   }
