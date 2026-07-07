@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Travel Itinerary Agent — Frontend
 
-## Getting Started
+Next.js (App Router) frontend for the [AI-travel-planning-agent-be](../AI-travel-planning-agent-be)
+FastAPI backend — a chat-driven interface for planning trips, with a rich interactive
+itinerary view (map, day-by-day timeline, budget breakdown, packing checklist).
 
-First, run the development server:
+## Stack
+
+| Layer | Choice |
+|---|---|
+| Framework | Next.js (App Router) + TypeScript |
+| Styling | Tailwind CSS v4 + shadcn/ui, dark-only theme ported from the backend's own design tokens |
+| Animation | Framer Motion |
+| Map | react-leaflet |
+| Data fetching | TanStack Query |
+| Forms | react-hook-form + zod |
+
+## Setup
 
 ```bash
+npm install
+cp .env.example .env.local   # point NEXT_PUBLIC_API_BASE_URL at your running backend
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The backend must be running separately — see `AI-travel-planning-agent-be/README.md`
+(`uvicorn main:app`, defaults to `http://localhost:8000`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Known backend caveat
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Save/share itinerary endpoints (`/api/itineraries`, `/api/share/{token}`) will error
+until `migration.sql` has been applied to the backend's Supabase project — this is a
+backend-side gap, not a frontend bug (the save/share UI is built regardless).
