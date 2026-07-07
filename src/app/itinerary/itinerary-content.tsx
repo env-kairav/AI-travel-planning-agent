@@ -170,7 +170,7 @@ export function ItineraryContent() {
     <div>
       <ItineraryHero plan={plan} originCity={originCity} onUpdate={(data: HeroSectionData) => patchContent(data)} />
 
-      <section id="map-section" className="max-w-6xl mx-auto px-6 py-20 print:hidden">
+      <section id="map-section" className="max-w-6xl mx-auto px-6 py-20 avoid-print-break">
         <SectionHeading eyebrow="Interactive map" title="All Locations at a Glance" />
         <div className="mt-10">
           <ItineraryMap days={content.days} centerLat={plan.destination_lat} centerLng={plan.destination_lon} />

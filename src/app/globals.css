@@ -143,6 +143,19 @@
     --primary-foreground: #ffffff;
   }
 
+  /*
+    Beyond text color, browsers also skip background-color AND background-image
+    (the hero photo, gradient overlays, badge fills) by default when printing,
+    unless the user has manually enabled "background graphics" in their print
+    dialog — which almost nobody does. print-color-adjust: exact forces the
+    browser to render backgrounds/images as shown on screen regardless of that
+    setting, so this doesn't rely on the user finding an obscure checkbox.
+  */
+  * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
   .shimmer-text {
     background: none;
     -webkit-text-fill-color: initial;
@@ -153,6 +166,28 @@
   .card-hover {
     animation: none !important;
     box-shadow: none !important;
+  }
+
+  /* Leaflet's zoom +/- control is interactive UI with no purpose on paper. */
+  .leaflet-control-zoom {
+    display: none !important;
+  }
+
+  /*
+    Activity cards fade in via framer-motion's whileInView, gated on the user
+    having actually scrolled them into view first. Printing captures whatever
+    the live DOM/inline-style state is — anything below the fold that was
+    never scrolled past stays at its pre-animation opacity: 0 and prints as
+    blank space. Force the settled state for print; !important beats the
+    non-important inline style framer-motion sets.
+  */
+  .reveal-on-scroll {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .avoid-print-break {
+    break-inside: avoid;
   }
 }
 

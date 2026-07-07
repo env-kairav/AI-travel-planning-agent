@@ -67,6 +67,30 @@ function FitBounds({ points }: { points: MapPoint[] }) {
   return null;
 }
 
+/**
+ * The @page layout printing uses (narrower content width, no scrollbars) is a
+ * different size than the screen container Leaflet last measured, so its
+ * cached tile/pane positions go stale and the map prints blank, cropped, or
+ * offset unless it's told to re-measure. `beforeprint` fires synchronously
+ * before the browser rasterizes the page, giving Leaflet one frame to
+ * recompute against the print layout.
+ */
+function PrintReflow({ points }: { points: MapPoint[] }) {
+  const map = useMap();
+  useEffect(() => {
+    function handleBeforePrint() {
+      map.invalidateSize({ animate: false });
+      if (points.length > 0) {
+        const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng] as [number, number]));
+        map.fitBounds(bounds, { padding: [40, 40], animate: false });
+      }
+    }
+    window.addEventListener("beforeprint", handleBeforePrint);
+    return () => window.removeEventListener("beforeprint", handleBeforePrint);
+  }, [map, points]);
+  return null;
+}
+
 export function ItineraryMap({
   days,
   centerLat,
@@ -94,7 +118,7 @@ export function ItineraryMap({
 
   return (
     <div>
-      <div className="flex flex-wrap justify-center gap-2 mb-5">
+      <div className="flex flex-wrap justify-center gap-2 mb-5 print:hidden">
         <button
           onClick={() => setVisibleDays(new Set(dayNumbers))}
           className={cn(
@@ -124,7 +148,7 @@ export function ItineraryMap({
         })}
       </div>
 
-      <div className="rounded-2xl overflow-hidden border border-border" style={{ height: 550 }}>
+      <div className="rounded-2xl overflow-hidden border border-border h-[550px] print:h-[380px] avoid-print-break">
         {points.length === 0 ? (
           <div className="h-full flex items-center justify-center text-muted-foreground text-sm bg-card">
             No mappable locations for this itinerary.
@@ -136,6 +160,7 @@ export function ItineraryMap({
               attribution="&copy; OpenStreetMap contributors &copy; CARTO"
             />
             <FitBounds points={visiblePoints.length ? visiblePoints : points} />
+            <PrintReflow points={visiblePoints.length ? visiblePoints : points} />
             {dayNumbers
               .filter((n) => visibleDays.has(n))
               .map((n) => {

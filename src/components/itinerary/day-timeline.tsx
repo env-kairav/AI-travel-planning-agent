@@ -66,7 +66,7 @@ export function DayTimeline({
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true, margin: "-80px" }}
                     transition={{ duration: 0.3, delay: i * 0.04 }}
-                    className="relative"
+                    className="relative reveal-on-scroll avoid-print-break"
                   >
                     <div
                       className="absolute -left-8 md:-left-10 top-6 w-5 h-5 rounded-full border-4 border-background"
