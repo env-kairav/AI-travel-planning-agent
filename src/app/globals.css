@@ -122,6 +122,40 @@
   }
 }
 
+/*
+  Printing was unreadable: browsers don't print background-color by default
+  (off unless the user enables "background graphics"), but text color does
+  print — so the dark theme's near-white text (#EDEDED) was printing on a
+  plain white page with nothing behind it. Override the theme variables for
+  print specifically so every component using them (no per-component changes
+  needed) gets real dark-on-white contrast instead.
+*/
+@media print {
+  :root, .dark {
+    --background: #ffffff;
+    --foreground: #171717;
+    --card: #ffffff;
+    --card-foreground: #171717;
+    --muted-foreground: #525252;
+    --accent-foreground: #c2410c;
+    --border: rgba(0, 0, 0, 0.15);
+    --primary: #c2410c;
+    --primary-foreground: #ffffff;
+  }
+
+  .shimmer-text {
+    background: none;
+    -webkit-text-fill-color: initial;
+    color: var(--primary);
+  }
+
+  .pulse-glow,
+  .card-hover {
+    animation: none !important;
+    box-shadow: none !important;
+  }
+}
+
 /* ─── Signature effects, ported from main.py SYSTEM_PROMPT / render_html.py ─── */
 
 @layer components {

@@ -38,7 +38,7 @@ export default async function SharedItineraryPage({ params }: { params: Promise<
   return (
     <div>
       <ItineraryHero plan={plan} originCity="Your City" />
-      <section className="max-w-6xl mx-auto px-6 py-20">
+      <section className="max-w-6xl mx-auto px-6 py-20 print:hidden">
         <SectionHeading eyebrow="Interactive map" title="All Locations at a Glance" />
         <div className="mt-10">
           <ItineraryMap days={content.days} centerLat={plan.destination_lat} centerLng={plan.destination_lon} />
