@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { DayRoute } from "@/components/itinerary/day-route";
 import { dayTheme } from "@/lib/day-theme";
 import type { ItineraryDay } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -135,6 +136,12 @@ export function ItineraryMap({
               attribution="&copy; OpenStreetMap contributors &copy; CARTO"
             />
             <FitBounds points={visiblePoints.length ? visiblePoints : points} />
+            {dayNumbers
+              .filter((n) => visibleDays.has(n))
+              .map((n) => {
+                const dayPoints = points.filter((p) => p.day === n);
+                return <DayRoute key={n} dayNumber={n} points={dayPoints} />;
+              })}
             {visiblePoints.map((p, i) => (
               <Marker key={p.id} position={[p.lat, p.lng]} icon={divIcon(p.day, i + 1)}>
                 <Popup>
@@ -149,6 +156,9 @@ export function ItineraryMap({
           </MapContainer>
         )}
       </div>
+      <p className="text-xs text-muted-foreground text-center mt-3">
+        Solid lines are real driving routes; dashed lines are straight-line estimates for stops that couldn&apos;t be routed.
+      </p>
     </div>
   );
 }
