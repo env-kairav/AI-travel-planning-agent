@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           <TooltipProvider>
             <Navbar />
             {children}
+            <Toaster theme="dark" />
           </TooltipProvider>
         </Providers>
       </body>

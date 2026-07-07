@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { getItineraryPlan } from "@/lib/api-client";
 import { ApiError } from "@/lib/api-client";
@@ -13,11 +12,7 @@ import { PackingSection } from "@/components/itinerary/packing-section";
 import { QuickRefSection } from "@/components/itinerary/quick-ref-section";
 import { TipsSection } from "@/components/itinerary/tips-section";
 import { ItineraryActionBar } from "@/components/itinerary/action-bar";
-
-const ItineraryMap = dynamic(() => import("@/components/itinerary/itinerary-map").then((m) => m.ItineraryMap), {
-  ssr: false,
-  loading: () => <div className="h-[550px] rounded-2xl bg-card border border-border animate-pulse" />,
-});
+import { ItineraryMap } from "@/components/itinerary/itinerary-map-client";
 
 export function ItineraryContent() {
   const params = useSearchParams();
