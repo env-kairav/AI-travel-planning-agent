@@ -84,10 +84,34 @@ export function ItineraryContent() {
   });
 
   const jobId = startData?.job_id;
+
+  // Safety net: if the job row never reaches "complete"/"error" (e.g. the
+  // background task's own DB write silently fails — exactly the kind of gap
+  // an RLS/permissions issue can cause), polling would otherwise continue
+  // forever with the loading skeleton stuck on screen and zero feedback to
+  // the user that anything is wrong. Give it generous headroom over the
+  // usual ~1.5-2min generation time, then surface an explicit error instead.
+  const [timedOut, setTimedOut] = useState(false);
+  // Reset adjusted during render when jobId changes (a genuinely new job to
+  // wait on) rather than as a synchronous setState at the top of the effect
+  // below — the effect itself legitimately needs to stay (a timer is exactly
+  // the "subscribe to an external system, setState from its callback" case
+  // the set-state-in-effect rule allows for).
+  const [prevJobId, setPrevJobId] = useState(jobId);
+  if (jobId !== prevJobId) {
+    setPrevJobId(jobId);
+    setTimedOut(false);
+  }
+  useEffect(() => {
+    if (!jobId || cachedResult) return;
+    const timer = setTimeout(() => setTimedOut(true), 4 * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [jobId, cachedResult]);
+
   const { data: statusData, error: statusError } = useQuery({
     queryKey: ["itinerary-job-status", jobId],
     queryFn: () => getItineraryGenerationStatus(jobId as string),
-    enabled: Boolean(jobId) && !cachedResult,
+    enabled: Boolean(jobId) && !cachedResult && !timedOut,
     // Snappier than a typical poll — the backend now writes partial progress
     // (structure first, then each day-chunk) as it goes, so polling faster
     // makes the itinerary visibly stream in rather than jump once at the end.
@@ -102,7 +126,7 @@ export function ItineraryContent() {
   // it. `result` is non-null starting from "in_progress", not just "complete".
   const data = cachedResult ?? (statusData?.result ?? undefined);
   const jobFailed = statusData?.status === "error";
-  const isError = !cachedResult && (jobFailed || Boolean(startError) || Boolean(statusError));
+  const isError = !cachedResult && (jobFailed || Boolean(startError) || Boolean(statusError) || timedOut);
   const isComplete = Boolean(cachedResult) || statusData?.status === "complete";
   const isGenerating = !cachedResult && !isComplete && !isError && Boolean(data);
   // Full-page loader only for the brief window before the *first* progress
@@ -150,11 +174,12 @@ export function ItineraryContent() {
   if (isLoading) return <ItineraryLoadingState destination={destination} />;
 
   if (isError) {
-    const message =
-      statusData?.error ??
-      (startError instanceof ApiError ? startError.message : undefined) ??
-      (statusError instanceof ApiError ? statusError.message : undefined) ??
-      "Something went wrong generating this itinerary.";
+    const message = timedOut
+      ? "This is taking much longer than expected, which usually means something went wrong on our end rather than the trip just being complex. Please try again."
+      : (statusData?.error ??
+        (startError instanceof ApiError ? startError.message : undefined) ??
+        (statusError instanceof ApiError ? statusError.message : undefined) ??
+        "Something went wrong generating this itinerary.");
     return (
       <div className="max-w-2xl mx-auto px-6 py-24 text-center">
         <SectionHeading eyebrow="Couldn't build this trip" title="Something went wrong" />

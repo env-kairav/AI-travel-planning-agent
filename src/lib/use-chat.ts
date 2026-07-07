@@ -29,34 +29,40 @@ export function useChat() {
       const res = await sendChatMessage(nextHistory);
       setHistory(res.messages.length ? res.messages : nextHistory);
 
+      if (res.content_type === "itinerary_redirect") {
+        // router.push is a side effect — it must not run inside the setDisplay
+        // updater below (React can invoke that function more than once, and
+        // calling setState-on-a-different-component mid-render is exactly the
+        // "Cannot update a component while rendering a different component"
+        // warning this used to trigger live). Do it here instead, once.
+        try {
+          const params = JSON.parse(res.reply) as ItineraryRedirectParams;
+          const qs = new URLSearchParams({
+            destination: params.destination,
+            days: String(params.days),
+            budget: String(params.budget),
+            travelers: String(params.travelers),
+            traveler_type: params.traveler_type,
+            autostart: "true",
+          });
+          if (params.travel_start_date) qs.set("travel_start_date", params.travel_start_date);
+          if (params.origin_city) qs.set("origin_city", params.origin_city);
+          router.push(`/itinerary?${qs.toString()}`);
+          setDisplay((d) => [
+            ...d.slice(0, -1),
+            { kind: "snippet", html: `<p>Building your <strong>${params.destination}</strong> itinerary — taking you there now…</p>` },
+          ]);
+        } catch {
+          setDisplay((d) => [...d.slice(0, -1), { kind: "error", message: "Got an itinerary response I couldn't parse." }]);
+        }
+        return;
+      }
+
       setDisplay((d) => {
         const withoutLoading = d.slice(0, -1);
 
         if (res.content_type === "clarification" && res.clarification) {
           return [...withoutLoading, { kind: "clarification", prompt: res.clarification }];
-        }
-
-        if (res.content_type === "itinerary_redirect") {
-          try {
-            const params = JSON.parse(res.reply) as ItineraryRedirectParams;
-            const qs = new URLSearchParams({
-              destination: params.destination,
-              days: String(params.days),
-              budget: String(params.budget),
-              travelers: String(params.travelers),
-              traveler_type: params.traveler_type,
-              autostart: "true",
-            });
-            if (params.travel_start_date) qs.set("travel_start_date", params.travel_start_date);
-            if (params.origin_city) qs.set("origin_city", params.origin_city);
-            router.push(`/itinerary?${qs.toString()}`);
-            return [
-              ...withoutLoading,
-              { kind: "snippet", html: `<p>Building your <strong>${params.destination}</strong> itinerary — taking you there now…</p>` },
-            ];
-          } catch {
-            return [...withoutLoading, { kind: "error", message: "Got an itinerary response I couldn't parse." }];
-          }
         }
 
         // "snippet" or "html" (html is effectively dead on the backend but handled defensively)
