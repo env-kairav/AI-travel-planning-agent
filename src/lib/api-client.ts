@@ -32,6 +32,34 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * FastAPI's error body is `{detail: ...}`, but `detail` isn't always a
+ * string: HTTPException(detail="...") gives a string, but a 422 from Pydantic
+ * field validation (e.g. days > 30) gives an array of
+ * {loc, msg, type} objects instead. String(thatArray) silently produced
+ * "[object Object]" — confirmed live once the backend actually started
+ * rejecting out-of-range requests instead of accepting anything.
+ */
+function extractErrorDetail(body: unknown): string | undefined {
+  if (!body || typeof body !== "object" || !("detail" in body)) return undefined;
+  const detail = (body as { detail: unknown }).detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((e) => {
+        if (e && typeof e === "object" && "msg" in e) {
+          const loc = Array.isArray((e as { loc?: unknown[] }).loc)
+            ? (e as { loc: unknown[] }).loc.filter((p) => p !== "body").join(".")
+            : undefined;
+          return loc ? `${loc}: ${(e as { msg: unknown }).msg}` : String((e as { msg: unknown }).msg);
+        }
+        return typeof e === "string" ? e : JSON.stringify(e);
+      })
+      .join("; ");
+  }
+  return typeof detail === "object" ? JSON.stringify(detail) : String(detail);
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -48,10 +76,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       body = await res.text().catch(() => undefined);
     }
-    const detail =
-      body && typeof body === "object" && "detail" in body
-        ? String((body as { detail: unknown }).detail)
-        : res.statusText;
+    const detail = extractErrorDetail(body) ?? res.statusText;
     throw new ApiError(detail, res.status, body);
   }
 
