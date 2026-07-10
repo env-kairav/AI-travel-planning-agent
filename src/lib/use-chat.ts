@@ -45,8 +45,13 @@ export function useChat() {
             traveler_type: params.traveler_type,
             autostart: "true",
           });
-          if (params.travel_start_date) qs.set("travel_start_date", params.travel_start_date);
-          if (params.origin_city) qs.set("origin_city", params.origin_city);
+          // The model occasionally emits the literal string "null" instead of
+          // JSON null for these two optional fields (confirmed live) — treat
+          // it the same as actually missing, or "null" would leak into the
+          // UI verbatim (e.g. the hero title reading "null to Goa").
+          const isNullish = (v: string | null | undefined) => !v || v.toLowerCase() === "null";
+          if (!isNullish(params.travel_start_date)) qs.set("travel_start_date", params.travel_start_date as string);
+          if (!isNullish(params.origin_city)) qs.set("origin_city", params.origin_city as string);
           router.push(`/itinerary?${qs.toString()}`);
           setDisplay((d) => [
             ...d.slice(0, -1),
