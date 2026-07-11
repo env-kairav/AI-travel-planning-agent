@@ -103,13 +103,12 @@ export function ItineraryContent() {
         plan={plan}
         originCity={originCity}
         onUpdate={gen.isComplete ? (data: HeroSectionData) => gen.patchContent(data) : undefined}
+        belowBadge={
+          primaryGen.isComplete ? (
+            <TierSwitcher active={tier} onChange={handleTierChange} loadingTiers={loadingTiers} />
+          ) : undefined
+        }
       />
-
-      {primaryGen.isComplete && (
-        <div className="max-w-4xl mx-auto px-6 -mt-4 mb-4">
-          <TierSwitcher active={tier} onChange={handleTierChange} loadingTiers={loadingTiers} />
-        </div>
-      )}
 
       <section id="map-section" className="max-w-6xl mx-auto px-6 py-20 avoid-print-break">
         <SectionHeading eyebrow="Interactive map" title="All Locations at a Glance" />

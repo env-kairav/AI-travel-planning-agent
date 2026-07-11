@@ -20,10 +20,15 @@ export function ItineraryHero({
   plan,
   originCity,
   onUpdate,
+  belowBadge,
 }: {
   plan: ItineraryPlan;
   originCity: string;
   onUpdate?: (data: HeroSectionData) => void;
+  /** Rendered right after the grounding badge, inside the hero's own centered
+   *  content flow — e.g. the tier switcher. Keeps it visually part of the hero
+   *  instead of a separate sibling trying to overlap via negative margin. */
+  belowBadge?: React.ReactNode;
 }) {
   const content = plan.itinerary_plan;
   const totalLocations = content.days.reduce((sum, d) => sum + d.activities.length, 0);
@@ -88,6 +93,12 @@ export function ItineraryHero({
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-6">
           <GroundingBadge grounding={plan.grounding} />
         </motion.div>
+
+        {belowBadge && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-6">
+            {belowBadge}
+          </motion.div>
+        )}
       </div>
     </section>
   );
