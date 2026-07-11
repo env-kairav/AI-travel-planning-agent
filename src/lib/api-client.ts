@@ -124,6 +124,13 @@ export type GenerationJobStatus = {
   status: "pending" | "in_progress" | "complete" | "error";
   result: ItineraryPlanResponse | null;
   error: string | null;
+  /** Real backend-reported status during the window before `result` has anything
+   *  to show yet: "researching" (fetching hotels/restaurants/weather/wikipedia) then
+   *  "planning" (the trip-structure LLM call). Absent once `result` is populated —
+   *  from there the existing day-by-day progress in `result.plan` is the real
+   *  signal. Also absent on backends where the `phase` column hasn't been added yet
+   *  (schema_v3.sql) — always treat as optional. */
+  phase?: "researching" | "planning" | null;
 };
 
 export function startItineraryGeneration(req: ItineraryPlanRequest): Promise<{ job_id: string; status: string }> {

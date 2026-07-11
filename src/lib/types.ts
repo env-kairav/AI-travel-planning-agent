@@ -171,6 +171,17 @@ export type GroundingReport = {
   anomalies: string[];
 };
 
+/** A real hotel candidate from the destination's data — used for the
+ * accommodation-swap picker. Not every field is guaranteed non-null (mirrors
+ * `Hotel` below, which frequently has gaps in the underlying data). */
+export type AccommodationOption = {
+  name: string | null;
+  price_per_night: number | null;
+  rating: number | null;
+  image_url: string;
+  address: string;
+};
+
 export type ItineraryPlan = {
   destination: string;
   destination_lat: number;
@@ -182,6 +193,12 @@ export type ItineraryPlan = {
   travel_start_date: string | null;
   hotel: string | null;
   hotel_image_url: string;
+  /** Absent on cached plans saved before this field existed — treat as optional. */
+  hotel_price_per_night?: number | null;
+  /** Up to 6 real alternates for the same destination, already fetched — swapping
+   * is pure client-side arithmetic (see recomputeCostForHotel), no API call needed.
+   * Absent on cached plans saved before this field existed. */
+  accommodation_options?: AccommodationOption[];
   cost_summary: CostSummary;
   itinerary_plan: ItineraryPlanContent;
   locations: MapLocation[];

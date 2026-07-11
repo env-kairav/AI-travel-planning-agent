@@ -1,6 +1,7 @@
 import { Bed, Car, Plane, ShoppingBag, Ticket, Utensils } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import type { CostSummary } from "@/lib/types";
+import type { AccommodationOption, CostSummary } from "@/lib/types";
+import { AccommodationPicker } from "./accommodation-picker";
 import { BudgetPerPersonSplit, BudgetSplitChart } from "./budget-split-chart";
 import { SectionHeading } from "./day-timeline";
 
@@ -8,7 +9,19 @@ function formatInr(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
 }
 
-export function BudgetSection({ cost, hotelName, days }: { cost: CostSummary; hotelName: string | null; days: number }) {
+export function BudgetSection({
+  cost,
+  hotelName,
+  days,
+  accommodationOptions,
+  onSwapAccommodation,
+}: {
+  cost: CostSummary;
+  hotelName: string | null;
+  days: number;
+  accommodationOptions?: AccommodationOption[];
+  onSwapAccommodation?: (option: AccommodationOption) => void;
+}) {
   const nights = Math.max(days - 1, 0);
   const cards = [
     { icon: Plane, label: "Flights", sub: "Round trip, per group", amount: cost.breakdown.flights },
@@ -32,6 +45,9 @@ export function BudgetSection({ cost, hotelName, days }: { cost: CostSummary; ho
             <h3 className="font-semibold text-foreground mb-1">{c.label}</h3>
             <p className="text-sm text-muted-foreground mb-3">{c.sub}</p>
             <p className="text-2xl font-bold text-primary">{c.amount !== null ? formatInr(c.amount) : "₹2,000+"}</p>
+            {c.label === "Accommodation" && onSwapAccommodation && accommodationOptions && (
+              <AccommodationPicker options={accommodationOptions} currentHotel={hotelName} onSelect={onSwapAccommodation} />
+            )}
           </Card>
         ))}
       </div>
