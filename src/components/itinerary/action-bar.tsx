@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Calendar, Globe, Link as LinkIcon, Loader2, Lock, Printer } from "lucide-react";
+import { Bookmark, Calendar, Download, Globe, Link as LinkIcon, Loader2, Lock, Printer } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,11 @@ import type { ItineraryPlanResponse } from "@/lib/types";
  */
 export function ItineraryActionBar({
   plan,
+  originCity,
   onSaved,
 }: {
   plan: ItineraryPlanResponse["plan"];
+  originCity: string;
   /** Fires whenever a save succeeds (including if it was already cached this
    * session) — lets the parent page pass the saved ID down to PackingSection
    * so checklist state can start persisting to the DB. */
@@ -26,6 +28,7 @@ export function ItineraryActionBar({
 }) {
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [itinId, setItinId] = useState<string | null>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(false);
@@ -104,6 +107,30 @@ export function ItineraryActionBar({
     }
   }
 
+  async function handlePdfExport() {
+    setExportingPdf(true);
+    try {
+      // Dynamic import — @react-pdf/renderer is a sizeable dependency this
+      // page shouldn't pay for on first load just because the button exists;
+      // only fetched when actually clicked.
+      const [{ pdf }, { ItineraryPdf }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/lib/pdf/itinerary-pdf"),
+      ]);
+      const blob = await pdf(<ItineraryPdf plan={plan} originCity={originCity} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${plan.destination.toLowerCase().replace(/\s+/g, "-")}-itinerary.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Couldn't generate the PDF right now.");
+    } finally {
+      setExportingPdf(false);
+    }
+  }
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 print:hidden">
       <ActionButton onClick={handleSave} loading={saving} title="Save">
@@ -114,6 +141,9 @@ export function ItineraryActionBar({
       </ActionButton>
       <ActionButton onClick={handleCopyLink} loading={saving} title="Copy share link">
         <LinkIcon className="w-5 h-5" />
+      </ActionButton>
+      <ActionButton onClick={handlePdfExport} loading={exportingPdf} title="Download PDF">
+        <Download className="w-5 h-5" />
       </ActionButton>
       <ActionButton onClick={handleCalendar} loading={downloading} title="Download calendar (.ics)">
         <Calendar className="w-5 h-5" />

@@ -278,7 +278,7 @@ export function ItineraryContent() {
       />
 
       {isComplete && (
-        <ItineraryActionBar plan={plan} onSaved={(id, shareToken) => setSavedItinerary({ id, shareToken })} />
+        <ItineraryActionBar plan={plan} originCity={originCity} onSaved={(id, shareToken) => setSavedItinerary({ id, shareToken })} />
       )}
     </div>
   );
