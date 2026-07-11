@@ -177,6 +177,7 @@ export function ItineraryContent() {
       <QuickRefSection
         qr={content.quick_ref}
         plan={plan}
+        travelEssentials={plan.travel_essentials}
         onUpdate={gen.isComplete ? (data: QuickRef) => gen.patchContent({ quick_ref: data }) : undefined}
       />
 

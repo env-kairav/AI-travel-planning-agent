@@ -87,10 +87,38 @@ export type Packing = {
 export type QuickRef = {
   emergency: string;
   tourism_line: string;
+  /** Absent on cached plans saved before this field existed — treat as optional. */
+  hospital?: string;
   local_cab: string;
   weather: string;
   base_area: string;
   languages: string;
+};
+
+export type VisaInfo = {
+  from: string;
+  to: string;
+  required: boolean;
+  type: string;
+  days?: number | null;
+  processing_days?: number | null;
+  note?: string;
+};
+
+export type ExchangeRate = {
+  from_currency: string;
+  to_currency: string;
+  rate: number;
+  updated_at: string;
+};
+
+/** Only present for a genuinely international trip (nationality/base currency
+ * hardcoded to Indian/INR on the backend — this app has no other concept of a
+ * traveler's actual nationality). null for domestic trips or when the origin
+ * city wasn't known at generation time. */
+export type TravelEssentials = {
+  visa: VisaInfo;
+  exchange_rate: ExchangeRate | null;
 };
 
 export type Activity = {
@@ -204,6 +232,9 @@ export type ItineraryPlan = {
   locations: MapLocation[];
   sources: WebSource[];
   grounding?: GroundingReport;
+  /** null for domestic trips; absent on cached plans saved before this field
+   * existed — both cases should render as "not applicable," not "loading." */
+  travel_essentials?: TravelEssentials | null;
   format: "structured_plan";
 };
 

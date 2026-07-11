@@ -47,7 +47,7 @@ export function ReadOnlySavedItinerary({ saved }: { saved: SavedItinerary }) {
       <TipsSection tips={content.tips} destination={plan.destination} />
       <PackingSection packing={content.packing} savedId={saved.id} initialState={saved.packing_state} />
       <SourcesSection sources={plan.sources} />
-      <QuickRefSection qr={content.quick_ref} />
+      <QuickRefSection qr={content.quick_ref} travelEssentials={plan.travel_essentials} />
     </div>
   );
 }

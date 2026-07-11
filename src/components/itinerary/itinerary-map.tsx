@@ -161,8 +161,12 @@ export function ItineraryMap({
     if (!map) return;
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = visiblePoints.map((p, i) => {
-      const popup = new maplibregl.Popup({ offset: 20, closeButton: true }).setHTML(
-        `<div style="font-family:inherit"><p style="font-weight:600;margin-bottom:4px">${escapeHtml(p.name)}</p><p style="font-size:11px;color:#a3a3a3;margin-bottom:4px">${escapeHtml(p.time)}</p><p style="font-size:12px">${escapeHtml(p.desc)}</p></div>`,
+      // Colors come from the .maplibregl-popup-content override in globals.css,
+      // not inline here — confirmed live that relying on the library's own
+      // default popup text color (unset/inherited) made this washed out and
+      // barely legible against its default white background.
+      const popup = new maplibregl.Popup({ offset: 20, closeButton: true, maxWidth: "240px" }).setHTML(
+        `<div style="font-family:inherit"><p style="font-weight:600;margin-bottom:4px">${escapeHtml(p.name)}</p><p style="font-size:11px;color:#f97316;margin-bottom:4px">${escapeHtml(p.time)}</p><p style="font-size:12px;color:#c9c9c9">${escapeHtml(p.desc)}</p></div>`,
       );
       return new maplibregl.Marker({ element: markerElement(p.day, i + 1) })
         .setLngLat([p.lng, p.lat])
