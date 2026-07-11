@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { Icon } from "@/components/icon";
+import { GroundingBadge } from "@/components/itinerary/grounding-badge";
 import { SectionEditor } from "@/components/itinerary/section-editor";
 import type { HeroSectionData, ItineraryPlan } from "@/lib/types";
 
@@ -82,6 +83,10 @@ export function ItineraryHero({
           <Badge icon={<Calendar className="w-4 h-4" />} label={formatDateRange(plan.travel_start_date, plan.days)} />
           <Badge icon={<Users className="w-4 h-4" />} label={`${plan.travelers} travelers`} />
           <Badge icon={<MapPin className="w-4 h-4" />} label={`${totalLocations} stops mapped`} />
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="mt-6">
+          <GroundingBadge grounding={plan.grounding} />
         </motion.div>
       </div>
     </section>

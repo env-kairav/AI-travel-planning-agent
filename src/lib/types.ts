@@ -154,6 +154,23 @@ export type WebSource = {
   snippet: string;
 };
 
+/**
+ * A mechanical (not LLM-judged) signal for how grounded this itinerary is —
+ * "verified" when real local hotel/restaurant/attraction data existed,
+ * "web_researched" when the no-local-data fallback found something via
+ * Wikipedia/web search, "estimated" when it's pure LLM knowledge. `anomalies`
+ * are plain data-shape checks (day count mismatch, identical coordinates
+ * across activities) computed backend-side, not opinions.
+ *
+ * Optional/absent-safe everywhere it's read: itineraries cached in
+ * sessionStorage from before this field existed won't have it.
+ */
+export type GroundingReport = {
+  level: "verified" | "web_researched" | "estimated";
+  local_data_counts: { hotels: number; restaurants: number; attractions: number };
+  anomalies: string[];
+};
+
 export type ItineraryPlan = {
   destination: string;
   destination_lat: number;
@@ -169,6 +186,7 @@ export type ItineraryPlan = {
   itinerary_plan: ItineraryPlanContent;
   locations: MapLocation[];
   sources: WebSource[];
+  grounding?: GroundingReport;
   format: "structured_plan";
 };
 
