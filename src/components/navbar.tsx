@@ -18,6 +18,9 @@ export function Navbar() {
           <Link href="/" className="hover:text-foreground transition-colors">
             Plan a trip
           </Link>
+          <Link href="/profile" className="hover:text-foreground transition-colors">
+            Profile
+          </Link>
         </nav>
       </div>
     </header>

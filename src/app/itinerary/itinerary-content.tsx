@@ -1,10 +1,11 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { HeroSectionData, Packing, QuickRef, Tip } from "@/lib/types";
-import type { ItineraryPlanRequest } from "@/lib/api-client";
+import { getMyItineraries, type ItineraryPlanRequest } from "@/lib/api-client";
 import { BudgetSection } from "@/components/itinerary/budget-section";
 import { DayTimeline, SectionHeading } from "@/components/itinerary/day-timeline";
 import { ItineraryHero } from "@/components/itinerary/hero";
@@ -29,6 +30,22 @@ export function ItineraryContent() {
   const travelStartDate = params.get("travel_start_date");
   const originCity = params.get("origin_city") ?? "Your City";
 
+  // This app has no login/auth — every saved trip belongs to the same shared
+  // Guest identity server-side, so this is "trips this guest has saved before,"
+  // not "this specific visitor's trips." Used as a soft style signal for the
+  // new generation below; capped at the 10 most recent so this stays a small,
+  // fast lookup rather than pulling the guest's entire history.
+  const { data: myTripsData, isLoading: pastTripsLoading } = useQuery({
+    queryKey: ["my-itineraries-for-history"],
+    queryFn: () => getMyItineraries(10, 0),
+    staleTime: 60_000,
+    retry: 0,
+  });
+  const pastHistory = useMemo(() => {
+    const types = (myTripsData?.data ?? []).map((t) => t.traveler_type).filter((t): t is string => Boolean(t));
+    return Array.from(new Set(types));
+  }, [myTripsData]);
+
   const basePlanParams: ItineraryPlanRequest = {
     destination,
     days,
@@ -37,6 +54,10 @@ export function ItineraryContent() {
     traveler_type: travelerType,
     travel_start_date: travelStartDate,
     origin_city: originCity !== "Your City" ? originCity : undefined,
+    // generate_itinerary already uses past_history to nudge attraction choices
+    // toward matching tags and avoid repeating past activities — this is the
+    // only new wiring needed, the backend side of this already existed.
+    past_history: pastHistory.length > 0 ? pastHistory : undefined,
   };
   // Alternate tiers: real second generations with adjusted budget (and, for
   // luxury, a nudged traveler_type so hotel/activity picks actually differ, not
@@ -53,7 +74,10 @@ export function ItineraryContent() {
 
   // Called unconditionally (rules of hooks) — `active` gates the network calls,
   // not the hook call itself, so switching tiers never remounts this component.
-  const primaryGen = useItineraryGeneration(tierParams.primary, tier === "primary");
+  // Primary additionally waits on the past-trips lookup settling so it doesn't
+  // race ahead and kick off generation with an empty past_history that a
+  // moment later should have had real data in it.
+  const primaryGen = useItineraryGeneration(tierParams.primary, tier === "primary" && !pastTripsLoading);
   const budgetGen = useItineraryGeneration(tierParams.budget, tier === "budget");
   const luxuryGen = useItineraryGeneration(tierParams.luxury, tier === "luxury");
   const gens = { primary: primaryGen, budget: budgetGen, luxury: luxuryGen };

@@ -61,11 +61,6 @@ export function useItineraryGeneration(params: ItineraryPlanRequest, active: boo
     setPrevJobId(jobId);
     setTimedOut(false);
   }
-  useEffect(() => {
-    if (!jobId || cachedResult) return;
-    const timer = setTimeout(() => setTimedOut(true), 4 * 60 * 1000);
-    return () => clearTimeout(timer);
-  }, [jobId, cachedResult]);
 
   const { data: statusData, error: statusError } = useQuery({
     queryKey: ["itinerary-job-status", jobId],
@@ -77,6 +72,22 @@ export function useItineraryGeneration(params: ItineraryPlanRequest, active: boo
     },
     retry: 0,
   });
+
+  // Safety-net timeout for a job that never reaches a terminal state — NOT a
+  // simple "4 minutes since the job started" timer. That was the actual bug
+  // (confirmed live): the timer's cleanup only depended on jobId/cachedResult,
+  // neither of which changes when a job finishes mid-session (cachedResult
+  // only gets populated from sessionStorage on mount, not when a job
+  // completes) — so it kept counting down and fired even on an itinerary that
+  // had already finished loading successfully minutes earlier, just because
+  // the tab was left open. Now explicitly cancelled once status reaches a
+  // terminal state.
+  const jobStatus = statusData?.status;
+  useEffect(() => {
+    if (!jobId || cachedResult || jobStatus === "complete" || jobStatus === "error") return;
+    const timer = setTimeout(() => setTimedOut(true), 4 * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [jobId, cachedResult, jobStatus]);
 
   const data = cachedResult ?? (statusData?.result ?? undefined);
   const jobFailed = statusData?.status === "error";

@@ -275,3 +275,15 @@ export function getPublicItineraries(limit = 20, offset = 0, destination?: strin
   if (destination) params.set("destination", destination);
   return request<{ offset: number; limit: number; data: SavedItinerary[] }>(`/api/itineraries/public?${params}`);
 }
+
+/** This app has no login/auth system — every save belongs to the same fixed
+ * "Guest" identity server-side, so this returns all of the guest's saved
+ * trips (public and private alike), not just the current visitor's. */
+export function getMyItineraries(limit = 50, offset = 0) {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  return request<{ offset: number; limit: number; data: SavedItinerary[] }>(`/api/itineraries?${params}`);
+}
+
+export function getItinerary(id: string): Promise<SavedItinerary> {
+  return request<SavedItinerary>(`/api/itineraries/${id}`);
+}
