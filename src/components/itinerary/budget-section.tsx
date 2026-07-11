@@ -1,6 +1,7 @@
 import { Bed, Car, Plane, ShoppingBag, Ticket, Utensils } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import type { CostSummary } from "@/lib/types";
+import { BudgetPerPersonSplit, BudgetSplitChart } from "./budget-split-chart";
 import { SectionHeading } from "./day-timeline";
 
 function formatInr(n: number): string {
@@ -35,6 +36,8 @@ export function BudgetSection({ cost, hotelName, days }: { cost: CostSummary; ho
         ))}
       </div>
 
+      <BudgetSplitChart cost={cost} />
+
       <Card className="mt-8 p-8 border-primary/30 bg-gradient-to-r from-primary/5 to-transparent pulse-glow flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
           <p className="text-xs text-accent-foreground tracking-widest uppercase mb-1">Total estimated cost</p>
@@ -48,6 +51,7 @@ export function BudgetSection({ cost, hotelName, days }: { cost: CostSummary; ho
           <p className="text-2xl font-bold text-accent-foreground">{formatInr(cost.per_person_inr)}</p>
         </div>
       </Card>
+      <BudgetPerPersonSplit cost={cost} />
     </section>
   );
 }
