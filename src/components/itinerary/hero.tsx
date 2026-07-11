@@ -1,7 +1,9 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Users } from "lucide-react";
+import { getPhotoUrl } from "@/lib/api-client";
 import { Icon } from "@/components/icon";
 import { GroundingBadge } from "@/components/itinerary/grounding-badge";
 import { SectionEditor } from "@/components/itinerary/section-editor";
@@ -33,11 +35,23 @@ export function ItineraryHero({
   const content = plan.itinerary_plan;
   const totalLocations = content.days.reduce((sum, d) => sum + d.activities.length, 0);
 
+  // The plain destination name (not the LLM-authored hero_image_seed, e.g.
+  // "delhi-monsoon-culture") is what actually resolves to a real photo — the
+  // backend's /api/photos looks up a real Wikipedia/Pexels image by query, and
+  // a clean single/two-word place name is what that lookup is reliable for.
+  // getPhotoUrl already falls back to picsum itself if the request fails, so
+  // no separate fallback is needed here.
+  const { data: heroImageUrl } = useQuery({
+    queryKey: ["photo", plan.destination],
+    queryFn: () => getPhotoUrl(plan.destination, 1600, 900),
+    staleTime: Infinity,
+  });
+
   return (
     <section className="relative overflow-hidden">
       <div
-        className="absolute inset-0 bg-cover bg-center opacity-40"
-        style={{ backgroundImage: `url(https://picsum.photos/seed/${content.hero_image_seed}/1600/900)` }}
+        className="absolute inset-0 bg-cover bg-center opacity-40 transition-opacity duration-700"
+        style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/80 to-background" />
 
