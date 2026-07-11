@@ -1,10 +1,11 @@
 "use client";
 
-import { Bookmark, Calendar, Download, Globe, Link as LinkIcon, Loader2, Lock, Printer } from "lucide-react";
+import { Bookmark, Download, Globe, Link as LinkIcon, Loader2, Lock, Printer } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { downloadItineraryCalendar, saveItinerary, setItineraryVisibility } from "@/lib/api-client";
+import { saveItinerary, setItineraryVisibility } from "@/lib/api-client";
+import { GoogleCalendarPicker } from "@/components/itinerary/google-calendar-picker";
 import type { ItineraryPlanResponse } from "@/lib/types";
 
 /**
@@ -27,7 +28,6 @@ export function ItineraryActionBar({
   onSaved?: (id: string, shareToken: string) => void;
 }) {
   const [saving, setSaving] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [itinId, setItinId] = useState<string | null>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
@@ -90,23 +90,6 @@ export function ItineraryActionBar({
     toast.success("Share link copied");
   }
 
-  async function handleCalendar() {
-    setDownloading(true);
-    try {
-      const blob = await downloadItineraryCalendar(plan);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${plan.destination.toLowerCase().replace(/\s+/g, "-")}-itinerary.ics`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      toast.error("Couldn't generate the calendar file.");
-    } finally {
-      setDownloading(false);
-    }
-  }
-
   async function handlePdfExport() {
     setExportingPdf(true);
     try {
@@ -145,9 +128,11 @@ export function ItineraryActionBar({
       <ActionButton onClick={handlePdfExport} loading={exportingPdf} title="Download PDF">
         <Download className="w-5 h-5" />
       </ActionButton>
-      <ActionButton onClick={handleCalendar} loading={downloading} title="Download calendar (.ics)">
-        <Calendar className="w-5 h-5" />
-      </ActionButton>
+      <GoogleCalendarPicker
+        days={plan.itinerary_plan.days}
+        destination={plan.destination}
+        travelStartDate={plan.travel_start_date}
+      />
       <ActionButton onClick={() => window.print()} title="Print">
         <Printer className="w-5 h-5" />
       </ActionButton>
