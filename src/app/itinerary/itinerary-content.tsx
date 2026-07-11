@@ -29,6 +29,7 @@ export function ItineraryContent() {
   const travelerType = params.get("traveler_type") ?? "leisure";
   const travelStartDate = params.get("travel_start_date");
   const originCity = params.get("origin_city") ?? "Your City";
+  const modeOfTransport = params.get("mode_of_transport");
 
   // This app has no login/auth — every saved trip belongs to the same shared
   // Guest identity server-side, so this is "trips this guest has saved before,"
@@ -54,6 +55,7 @@ export function ItineraryContent() {
     traveler_type: travelerType,
     travel_start_date: travelStartDate,
     origin_city: originCity !== "Your City" ? originCity : undefined,
+    mode_of_transport: modeOfTransport ?? undefined,
     // generate_itinerary already uses past_history to nudge attraction choices
     // toward matching tags and avoid repeating past activities — this is the
     // only new wiring needed, the backend side of this already existed.

@@ -75,6 +75,11 @@ export function ClarificationForm({
                 }
               />
             )}
+            {field.id === "budget" && (
+              <p className="text-xs text-muted-foreground">
+                Rough estimate only — actual cost can vary based on your choices and any add-ons.
+              </p>
+            )}
           </div>
         ))}
         <Button type="submit" disabled={!canSubmit || disabled} className="w-full">

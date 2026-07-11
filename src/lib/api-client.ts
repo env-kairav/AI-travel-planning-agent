@@ -105,6 +105,7 @@ export type ItineraryPlanRequest = {
   travel_start_date?: string | null;
   origin_city?: string | null;
   past_history?: string[];
+  mode_of_transport?: string | null;
 };
 
 export function getItineraryPlan(req: ItineraryPlanRequest): Promise<ItineraryPlanResponse> {

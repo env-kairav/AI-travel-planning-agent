@@ -47,6 +47,7 @@ export type ItineraryRedirectParams = {
   /** Frequently null even when the user names an origin city — the LLM often
    *  skips search_flights entirely. Default to "Your City" in the UI. */
   origin_city: string | null;
+  mode_of_transport?: string | null;
 };
 
 // ─── Itinerary plan ─────────────────────────────────────────────────────

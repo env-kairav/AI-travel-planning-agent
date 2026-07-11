@@ -44,6 +44,7 @@ export function DayRouteLayer({
 }) {
   const lineSourceId = `route-${dayNumber}`;
   const lineLayerId = `route-line-${dayNumber}`;
+  const flowLayerId = `route-flow-${dayNumber}`;
   const labelSourceId = `route-labels-${dayNumber}`;
   const labelLayerId = `route-label-${dayNumber}`;
 
@@ -65,10 +66,14 @@ export function DayRouteLayer({
     // ("Cannot read properties of undefined (reading 'getLayer')") when
     // navigating away from the itinerary page. There's nothing meaningful to
     // clean up on a map that no longer exists, so swallow it.
+    let flowInterval: ReturnType<typeof setInterval> | undefined;
+
     function cleanup() {
+      if (flowInterval !== undefined) clearInterval(flowInterval);
       try {
         if (map!.getLayer(labelLayerId)) map!.removeLayer(labelLayerId);
         if (map!.getSource(labelSourceId)) map!.removeSource(labelSourceId);
+        if (map!.getLayer(flowLayerId)) map!.removeLayer(flowLayerId);
         if (map!.getLayer(lineLayerId)) map!.removeLayer(lineLayerId);
         if (map!.getSource(lineSourceId)) map!.removeSource(lineSourceId);
       } catch {
@@ -137,6 +142,42 @@ export function DayRouteLayer({
               ...(safeRoute.isRealRoute ? {} : { "line-dasharray": [2, 2] }),
             },
           });
+        }
+
+        // "Marching ants" flow overlay — a second dashed line on top of the
+        // base one whose dasharray steps forward on an interval, reading as
+        // motion along the route rather than a static line. Standard MapLibre/
+        // Mapbox technique (there's no native "animate this line" paint
+        // property) — see their "animate a line" example.
+        if (!map!.getLayer(flowLayerId)) {
+          map!.addLayer({
+            id: flowLayerId,
+            type: "line",
+            source: lineSourceId,
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": t.hex,
+              "line-width": 3,
+              "line-opacity": 0.9,
+              "line-dasharray": [0, 4, 3],
+            },
+          });
+          const dashSequence: number[][] = [
+            [0, 4, 3], [0.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5],
+            [2, 4, 1], [2.5, 4, 0.5], [3, 4, 0],
+            [0, 0.5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5],
+            [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, 0.5],
+          ];
+          let step = 0;
+          flowInterval = setInterval(() => {
+            if (!map!.getLayer(flowLayerId)) return;
+            step = (step + 1) % dashSequence.length;
+            try {
+              map!.setPaintProperty(flowLayerId, "line-dasharray", dashSequence[step]);
+            } catch {
+              // Layer/map gone — the interval's own cleanup will catch up shortly.
+            }
+          }, 80);
         }
 
         if (map!.getSource(labelSourceId)) {

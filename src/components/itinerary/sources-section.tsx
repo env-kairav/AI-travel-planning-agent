@@ -4,9 +4,9 @@ import type { WebSource } from "@/lib/types";
 import { SectionHeading } from "./day-timeline";
 
 /**
- * Only rendered when the backend actually used live web search (no curated
- * hotel/restaurant/attraction data for this destination) — empty/absent for
- * well-covered destinations, so this section just doesn't appear for those.
+ * Renders whenever the backend has at least one citable source for this
+ * destination — Wikipedia runs for every trip, plus live web search results
+ * for destinations without curated hotel/restaurant/attraction data.
  */
 export function SourcesSection({ sources }: { sources: WebSource[] }) {
   if (!sources.length) return null;
@@ -15,9 +15,8 @@ export function SourcesSection({ sources }: { sources: WebSource[] }) {
     <section className="max-w-4xl mx-auto px-6 py-20 border-t border-border print:hidden">
       <SectionHeading eyebrow="Where this came from" title="Sources" />
       <p className="text-sm text-muted-foreground text-center max-w-lg mx-auto mt-4">
-        This destination doesn&apos;t have curated data yet, so this itinerary was built
-        using live web search alongside general knowledge. Worth double-checking
-        specifics against these before you book.
+        This itinerary was built using general knowledge alongside the sources below.
+        Worth double-checking specifics against these before you book.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10">
         {sources.map((s) => (

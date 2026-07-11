@@ -52,6 +52,7 @@ export function useChat() {
           const isNullish = (v: string | null | undefined) => !v || v.toLowerCase() === "null";
           if (!isNullish(params.travel_start_date)) qs.set("travel_start_date", params.travel_start_date as string);
           if (!isNullish(params.origin_city)) qs.set("origin_city", params.origin_city as string);
+          if (!isNullish(params.mode_of_transport)) qs.set("mode_of_transport", params.mode_of_transport as string);
           router.push(`/itinerary?${qs.toString()}`);
           setDisplay((d) => [
             ...d.slice(0, -1),
