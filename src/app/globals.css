@@ -229,38 +229,43 @@
     border-top: 2px dashed rgba(255, 255, 255, 0.1);
   }
 
-  /* MapLibre's default popup is a plain white box — its own default text color
-   * ended up washed-out/illegible against it in practice (confirmed live: an
-   * activity popup's text was barely visible). Themed to match the app's dark
-   * card style instead of trusting the library default or fighting it with
-   * per-popup inline styles. */
-  .maplibregl-popup-content {
-    background: #0a0a0a;
-    color: #ededed;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 12px 14px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
-  .maplibregl-popup-anchor-top .maplibregl-popup-tip,
-  .maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
-  .maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
-    border-bottom-color: #0a0a0a;
-  }
-  .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
-  .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
-  .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
-    border-top-color: #0a0a0a;
-  }
-  .maplibregl-popup-close-button {
-    color: #a3a3a3;
-    font-size: 18px;
-    padding: 2px 6px;
-  }
-  .maplibregl-popup-close-button:hover {
-    color: #ededed;
-    background: transparent;
-  }
+}
+
+/* MapLibre's own maplibre-gl.css ships un-layered (background:#fff on
+ * .maplibregl-popup-content, no text color set — confirmed live: illegible
+ * washed-out text on a white box). Per the CSS Cascade Layers spec, ANY
+ * un-layered rule beats a rule inside a named @layer regardless of
+ * specificity or source order — so putting this override inside Tailwind's
+ * `@layer components` above silently lost to MapLibre's default every time,
+ * despite matching the selector exactly. Deliberately un-layered here (plus
+ * one extra `.maplibregl-popup` ancestor for specificity, belt-and-braces
+ * against import-order flukes) so it actually wins. */
+.maplibregl-popup .maplibregl-popup-content {
+  background: #0a0a0a;
+  color: #ededed;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.maplibregl-popup.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.maplibregl-popup.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.maplibregl-popup.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: #0a0a0a;
+}
+.maplibregl-popup.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.maplibregl-popup.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.maplibregl-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: #0a0a0a;
+}
+.maplibregl-popup .maplibregl-popup-close-button {
+  color: #a3a3a3;
+  font-size: 18px;
+  padding: 2px 6px;
+}
+.maplibregl-popup .maplibregl-popup-close-button:hover {
+  color: #ededed;
+  background: transparent;
 }
 
 @keyframes shimmer {

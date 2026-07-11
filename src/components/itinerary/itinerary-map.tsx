@@ -25,6 +25,10 @@ type MapPoint = {
  * top-level `locations[]` field, which is often sparse (just the hotel) — matches
  * what the backend's own render_html.py already does internally.
  */
+function truncate(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+}
+
 function buildPoints(days: ItineraryDay[]): MapPoint[] {
   const points: MapPoint[] = [];
   let order = 0;
@@ -36,7 +40,7 @@ function buildPoints(days: ItineraryDay[]): MapPoint[] {
         day: day.number,
         name: act.title,
         time: act.time,
-        desc: act.description.replace(/<[^>]+>/g, "").slice(0, 100),
+        desc: truncate(act.description.replace(/<[^>]+>/g, ""), 100),
         lat: act.lat,
         lng: act.lng,
       });
