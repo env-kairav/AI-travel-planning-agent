@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import type { HeroSectionData, ItineraryDay, ItineraryPlan, ItineraryPlanResponse, Packing, QuickRef, Tip } from "@/lib/types";
 import { ApiError, getItineraryGenerationStatus, startItineraryGeneration } from "@/lib/api-client";
 import { BudgetSection } from "@/components/itinerary/budget-section";
@@ -207,6 +208,24 @@ export function ItineraryContent() {
     patchContent({ days });
   }
 
+  function moveActivity(
+    from: { dayIndex: number; actIndex: number },
+    to: { dayIndex: number; actIndex: number },
+  ) {
+    if (from.dayIndex === to.dayIndex && from.actIndex === to.actIndex) return;
+    const days = content.days.map((d) => ({ ...d, activities: [...d.activities] }));
+    const [moved] = days[from.dayIndex].activities.splice(from.actIndex, 1);
+    // Removing the source item shifts every later index in the *same* day down
+    // by one — correct the insertion point so it lands where the pointer was,
+    // not one slot further.
+    const insertAt = from.dayIndex === to.dayIndex && from.actIndex < to.actIndex ? to.actIndex - 1 : to.actIndex;
+    days[to.dayIndex].activities.splice(insertAt, 0, moved);
+    patchContent({ days });
+    if (from.dayIndex !== to.dayIndex) {
+      toast("Moved to a different day — its time may no longer fit; use the edit button to adjust it.");
+    }
+  }
+
   // Editing (and saving) only make sense once generation has actually
   // finished — mid-stream, a day you'd edit might still get overwritten by
   // the next poll, and "Save" would persist a trip that's still missing days.
@@ -234,6 +253,7 @@ export function ItineraryContent() {
         days={content.days}
         plan={plan}
         onDayUpdate={isComplete ? updateDay : undefined}
+        onActivityMove={isComplete ? moveActivity : undefined}
         totalDays={plan.days}
         isGenerating={isGenerating}
       />
