@@ -181,8 +181,9 @@ export function ItineraryMap({
         ) : (
           <MapContainer center={[centerLat, centerLng]} zoom={11} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
             <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; <a href=&quot;https://www.openstreetmap.org/copyright&quot;>OpenStreetMap</a> contributors"
+              maxZoom={19}
             />
             <FitBounds points={visiblePoints.length ? visiblePoints : points} />
             <PrintReflow points={visiblePoints.length ? visiblePoints : points} />
