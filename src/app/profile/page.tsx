@@ -9,8 +9,6 @@ import type { SavedItinerary } from "@/lib/types";
 // build time — render fresh per-request instead (same reasoning as /destinations).
 export const dynamic = "force-dynamic";
 
-const GUEST_USER_ID = "00000000-0000-0000-0000-000000000001";
-
 function formatDate(iso?: string): string {
   if (!iso) return "";
   return new Date(iso).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
@@ -35,7 +33,6 @@ export default async function ProfilePage() {
         </div>
         <div className="flex-1">
           <h1 className="font-heading text-2xl font-bold text-foreground">Guest</h1>
-          <p className="text-xs text-muted-foreground mt-1 font-mono">ID: {GUEST_USER_ID}</p>
           <p className="text-sm text-muted-foreground mt-3 max-w-md">
             This app doesn&apos;t have accounts — every trip you plan and save here belongs to this single Guest
             profile, shared by anyone using this app.

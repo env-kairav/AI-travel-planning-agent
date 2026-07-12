@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { ChatPanel } from "@/components/chat/chat-panel";
 
 export default function Home() {
@@ -20,7 +21,9 @@ export default function Home() {
         </p>
       </div>
 
-      <ChatPanel />
+      <Suspense fallback={null}>
+        <ChatPanel />
+      </Suspense>
     </main>
   );
 }

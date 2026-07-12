@@ -104,8 +104,8 @@ export function PitchContent() {
           </h2>
           <div className="flex flex-col gap-4">
             {[
-              "You describe the trip — as little or as much detail as you want",
-              "A few quick questions fill in what's missing: dates, budget, who's coming, how you're traveling",
+              "You describe the trip (or just pick a destination to browse) — as little or as much detail as you want",
+              "A few quick questions fill in what's missing: dates, budget, who's coming, what you're after, how you're traveling",
               "The trip streams in live — hero and tips first, then each day",
               "A 3D map, real budget breakdown, packing list, and cited sources round it out",
             ].map((step, i) => (

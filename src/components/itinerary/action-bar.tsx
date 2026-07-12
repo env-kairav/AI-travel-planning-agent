@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { saveItinerary, setItineraryVisibility } from "@/lib/api-client";
-import { GoogleCalendarPicker } from "@/components/itinerary/google-calendar-picker";
+import { AddToCalendarPicker } from "@/components/itinerary/add-to-calendar-picker";
 import type { ItineraryPlanResponse } from "@/lib/types";
 
 /**
@@ -129,7 +129,8 @@ export function ItineraryActionBar({
       <ActionButton onClick={handlePdfExport} loading={exportingPdf} title="Download PDF">
         <Download className="w-5 h-5" />
       </ActionButton>
-      <GoogleCalendarPicker
+      <AddToCalendarPicker
+        plan={plan}
         days={plan.itinerary_plan.days}
         destination={plan.destination}
         travelStartDate={plan.travel_start_date}

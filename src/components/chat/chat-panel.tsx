@@ -2,7 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUp, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChat } from "@/lib/use-chat";
@@ -19,6 +20,25 @@ const SUGGESTIONS = [
 export function ChatPanel() {
   const { display, pending, send, submitClarification } = useChat();
   const [input, setInput] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Picking a destination card on /destinations used to jump straight to
+  // /itinerary with hardcoded defaults (travelers=2, "Your City", flexible
+  // dates) — silently skipping origin/dates/group-size instead of asking.
+  // Routing it through the same chat message a typed request would produce
+  // reuses the existing clarification flow instead of duplicating it, so a
+  // destination pick asks for exactly what's actually missing, same as
+  // typing "Plan a trip to Goa" would.
+  const autoSent = useRef(false);
+  useEffect(() => {
+    const destination = searchParams.get("destination");
+    if (!destination || autoSent.current) return;
+    autoSent.current = true;
+    void send(`Plan a trip to ${destination}`);
+    router.replace("/", { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

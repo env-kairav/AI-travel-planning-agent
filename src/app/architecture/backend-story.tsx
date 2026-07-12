@@ -67,7 +67,10 @@ export function BackendStory() {
         <p className="text-muted-foreground leading-relaxed">
           A 10-day trip isn&apos;t generated as one massive request — the trip structure (hero, tips, packing) comes
           first, then days are generated a few at a time. Each finished piece is written to a background job row in
-          Supabase, which is exactly what the frontend is polling.
+          Supabase, which is exactly what the frontend is polling. The chunk boundaries themselves are chosen
+          deliberately: a trailing single-day chunk is folded into the previous one, so the model is never handed a
+          lone final day that reads as both &ldquo;first day of this batch&rdquo; and &ldquo;last day of this
+          batch&rdquo; at once — that exact overlap used to make it invent a same-day arrival right before departure.
         </p>
         <div className="mt-6">
           <FlowStack>
@@ -100,8 +103,9 @@ export function BackendStory() {
       <StorySection step={7} accent={1} icon={CircleDollarSign} title="A budget that actually responds to your choices">
         <p className="text-muted-foreground leading-relaxed">
           Cost is computed per person, and the biggest lever is how you&apos;re getting there — choosing train, bus,
-          or your own vehicle over flying can cut that single line item by up to 90%, making a modest budget
-          realistic instead of automatically blown.
+          or your own vehicle over flying can cut that single line item by up to 90%. Every other line item —
+          hotel, food, activities, local transport — scales with the stated budget too, each with its own sane
+          floor, instead of a fixed per-day rate that ignored what was actually asked for.
         </p>
       </StorySection>
 

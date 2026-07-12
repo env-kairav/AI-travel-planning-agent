@@ -172,17 +172,14 @@ export function DestinationsContent() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {destinations.map((dest) => {
-              const suggestedBudget = Math.max(dest.avg_budget_per_day_inr * 5, 15000);
-              const params = new URLSearchParams({
-                destination: dest.name,
-                days: "5",
-                budget: String(suggestedBudget),
-                travelers: "2",
-                traveler_type: "leisure",
-                autostart: "true",
-              });
+              // Used to jump straight to /itinerary with hardcoded defaults
+              // (travelers=2, "Your City", flexible dates) — silently skipping
+              // origin/dates/group-size instead of asking. Routes through the
+              // home page's chat instead, which asks for whatever's actually
+              // missing, same as typing "Plan a trip to Goa" would.
+              const params = new URLSearchParams({ destination: dest.name });
               return (
-                <Link key={dest.id} href={`/itinerary?${params}`}>
+                <Link key={dest.id} href={`/?${params}`}>
                   <Card className="overflow-hidden card-hover p-0 h-full">
                     <div
                       className="h-44 bg-cover bg-center relative"

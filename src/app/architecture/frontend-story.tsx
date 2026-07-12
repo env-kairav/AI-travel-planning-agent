@@ -21,11 +21,13 @@ import { FlowNode, FlowStack, FlowArrow, FlowRow } from "./flow-diagram";
 export function FrontendStory() {
   return (
     <div>
-      <StorySection step={1} accent={1} icon={MessageCircle} title="It starts with a conversation">
+      <StorySection step={1} accent={1} icon={MessageCircle} title="It starts with a conversation — or a browse">
         <p className="text-muted-foreground leading-relaxed">
           No forms to fill out first. You just type what you want — &ldquo;weekend trip to Manali&rdquo; is enough
           to start. The chat panel (<code className="text-xs bg-white/5 px-1.5 py-0.5 rounded">useChat</code>) sends
-          your message straight to the backend and renders whatever comes back.
+          your message straight to the backend and renders whatever comes back. Prefer to browse? Picking a
+          destination card feeds that same chat pipeline (&ldquo;Plan a trip to Goa&rdquo;) instead of skipping
+          straight to a page full of guessed defaults — same questions asked either way.
         </p>
         <div className="mt-6">
           <FlowNode icon={MessageCircle} label="Chat panel" sub="src/components/chat/chat-panel.tsx" tone="primary" />
@@ -34,12 +36,15 @@ export function FrontendStory() {
 
       <StorySection step={2} accent={2} icon={ListChecks} title="It fills in the gaps — one question at a time">
         <p className="text-muted-foreground leading-relaxed">
-          The backend figures out what&apos;s still missing (origin city, dates, budget, who&apos;s coming,
-          how you want to travel) and sends back a structured clarification prompt. The frontend renders it as a
-          real form — text, number, date, and select fields, all from the same generic component.
+          The backend figures out what&apos;s still missing — origin city, dates, budget, adults/children
+          separately, what you actually want to explore (free text, not a pick-one dropdown), who the trip is for,
+          how you&apos;re traveling — and sends back a structured clarification prompt. The frontend renders it as a
+          real form from one generic component, right down to a custom-built calendar (always dd/mm/yyyy — a native
+          date input&apos;s display format is controlled by the browser/OS locale, not by us, so this is a real
+          component, not a workaround).
         </p>
         <div className="mt-6">
-          <FlowNode icon={Sparkles} label="Clarification form" sub="Adults, children, budget, transport…" />
+          <FlowNode icon={Sparkles} label="Clarification form" sub="Adults, children, trip purpose, dates, transport…" />
         </div>
       </StorySection>
 
@@ -91,10 +96,12 @@ export function FrontendStory() {
         </div>
       </StorySection>
 
-      <StorySection step={7} accent={1} icon={Save} title="Save it, share it">
+      <StorySection step={7} accent={1} icon={Save} title="Save it, share it, take it with you">
         <p className="text-muted-foreground leading-relaxed">
           A finished trip can be saved (public or private) and reopened later from your profile — or shared as a
-          read-only link anyone can open, no account required on either end.
+          read-only link anyone can open, no account required on either end. The whole trip can also be downloaded
+          as one calendar file (every day, every activity), or quick-added a day at a time straight into Google
+          Calendar.
         </p>
         <div className="mt-6">
           <FlowRow>

@@ -1,7 +1,8 @@
 "use client";
 
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, Download, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,8 +12,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { downloadItineraryCalendar } from "@/lib/api-client";
 import { dayTheme } from "@/lib/day-theme";
-import type { ItineraryDay } from "@/lib/types";
+import type { ItineraryDay, ItineraryPlanResponse } from "@/lib/types";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -77,25 +79,49 @@ function buildGoogleCalendarUrl(day: ItineraryDay, destination: string, travelSt
 }
 
 /**
- * Opens Google Calendar directly, pre-filled — no file, no download. One event
- * per day (bundling that day's activities into the description) rather than
- * one per activity: Google's quick-add URL only supports a single event per
- * link, and a typical 6-activity/day trip would mean 30+ separate links
- * otherwise. Apple/Outlook users aren't covered by this — there's no public
- * one-click quick-add URL for either, only the .ics import flow (still
- * available via the backend's /api/itinerary/calendar for anyone who needs it).
+ * Two ways to get a trip onto a calendar, in one dialog:
+ * 1. Whole trip as a single .ics download — every day, every activity, one
+ *    file, works with any calendar app (Apple/Outlook/Google's own import).
+ *    The backend endpoint for this (/api/itinerary/calendar) already existed
+ *    but had no button wired to it anywhere in the UI.
+ * 2. Per-day quick-add straight into Google Calendar, no file — kept as the
+ *    fast path for Google users. One event per day (bundling that day's
+ *    activities into the description) rather than one per activity: Google's
+ *    quick-add URL only supports a single event per link, and a typical
+ *    6-activity/day trip would mean 30+ separate links otherwise.
  */
-export function GoogleCalendarPicker({
+export function AddToCalendarPicker({
+  plan,
   days,
   destination,
   travelStartDate,
 }: {
+  plan: ItineraryPlanResponse["plan"];
   days: ItineraryDay[];
   destination: string;
   travelStartDate: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   if (days.length === 0) return null;
+
+  async function handleDownloadWholeTrip() {
+    setDownloading(true);
+    try {
+      const blob = await downloadItineraryCalendar(plan);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${destination.toLowerCase().replace(/\s+/g, "-")}-itinerary.ics`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setOpen(false);
+    } catch {
+      toast.error("Couldn't generate the calendar file right now.");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -105,7 +131,7 @@ export function GoogleCalendarPicker({
             size="icon"
             variant="secondary"
             className="h-12 w-12 rounded-full shadow-xl border border-border"
-            title="Add to Google Calendar"
+            title="Add to Calendar"
           >
             <CalendarPlus className="w-5 h-5" />
           </Button>
@@ -113,12 +139,25 @@ export function GoogleCalendarPicker({
       />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add to Google Calendar</DialogTitle>
+          <DialogTitle>Add to Calendar</DialogTitle>
           <DialogDescription>
-            Opens directly in Google Calendar, pre-filled — one event per day, nothing to download.
+            Download the whole trip as one file, or quick-add a single day straight into Google Calendar.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2 max-h-[60vh] overflow-y-auto -mx-1 px-1">
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-3 h-auto py-3"
+          onClick={handleDownloadWholeTrip}
+          disabled={downloading}
+        >
+          {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          <span className="text-left">
+            <span className="block font-medium text-sm">Download whole trip (.ics)</span>
+            <span className="block text-xs text-muted-foreground font-normal">All {days.length} days, one file — works with any calendar app</span>
+          </span>
+        </Button>
+        <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold pt-2">Or add a single day to Google Calendar</p>
+        <div className="space-y-2 max-h-[45vh] overflow-y-auto -mx-1 px-1">
           {days.map((day) => {
             const t = dayTheme(day.number);
             const url = buildGoogleCalendarUrl(day, destination, travelStartDate);
