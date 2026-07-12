@@ -15,6 +15,13 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import type { ClarificationPrompt } from "@/lib/types";
 
+// Options like "romantic_getaway"/"own_vehicle" are the literal values sent to
+// the backend — display-only formatting to Title Case with spaces, the actual
+// submitted value stays untouched.
+function formatOptionLabel(opt: string): string {
+  return opt.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function ClarificationForm({
   prompt,
   onSubmit,
@@ -55,7 +62,7 @@ export function ClarificationForm({
                 <SelectContent>
                   {(field.options ?? []).map((opt) => (
                     <SelectItem key={opt} value={opt}>
-                      {opt}
+                      {formatOptionLabel(opt)}
                     </SelectItem>
                   ))}
                 </SelectContent>

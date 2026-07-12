@@ -82,12 +82,26 @@ export function useItineraryGeneration(params: ItineraryPlanRequest, active: boo
   // had already finished loading successfully minutes earlier, just because
   // the tab was left open. Now explicitly cancelled once status reaches a
   // terminal state.
+  //
+  // The 4-minute window itself restarts on any observed forward progress
+  // (phase changing researching -> planning, or another day landing in
+  // result.plan) rather than being a flat ceiling on total generation time.
+  // Confirmed live: a real, non-stuck generation can legitimately run past 4
+  // minutes under slow LLM-provider conditions (retries/fallback chain) —
+  // a flat timer fired the generic "something went wrong" message on a job
+  // that was actually still actively completing, not stuck. A job that's
+  // truly stalled (server crashed/restarted mid-task, orphaning it — a known
+  // limitation of the BackgroundTasks approach, see _run_generation_job's own
+  // docstring) still won't show any progress signature change and will still
+  // time out, just measured from the last real sign of life instead of from
+  // job start.
   const jobStatus = statusData?.status;
+  const progressSignature = `${statusData?.phase ?? ""}:${statusData?.result?.plan?.itinerary_plan?.days?.length ?? 0}`;
   useEffect(() => {
     if (!jobId || cachedResult || jobStatus === "complete" || jobStatus === "error") return;
     const timer = setTimeout(() => setTimedOut(true), 4 * 60 * 1000);
     return () => clearTimeout(timer);
-  }, [jobId, cachedResult, jobStatus]);
+  }, [jobId, cachedResult, jobStatus, progressSignature]);
 
   const data = cachedResult ?? (statusData?.result ?? undefined);
   const jobFailed = statusData?.status === "error";
