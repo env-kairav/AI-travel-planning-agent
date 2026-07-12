@@ -63,16 +63,33 @@ export function ClarificationForm({
               <Input
                 id={field.id}
                 type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-                placeholder={field.placeholder ?? undefined}
-                min={field.min ?? undefined}
+                placeholder={field.type === "date" ? "dd/mm/yyyy" : (field.placeholder ?? undefined)}
+                min={field.type === "number" && field.id === "days" ? "1" : (field.min ?? undefined)}
                 max={field.max ?? undefined}
                 value={values[field.id] ?? ""}
-                onChange={(e) =>
+                onChange={(e) => {
+                  let newValue: string | number = e.target.value;
+                  if (field.type === "number") {
+                    // Allow empty string for clearing the field
+                    if (e.target.value === "") {
+                      newValue = "";
+                    } else {
+                      const numValue = Number(e.target.value);
+                      // Specific validation: "days" field should not allow 0
+                      if (field.id === "days" && numValue === 0 && e.target.value !== "") {
+                        return; // Don't update state if trying to enter 0
+                      }
+                      newValue = numValue;
+                    }
+                  } else if (field.type === "date" && e.target.value) {
+                    // Keep date value as is
+                    newValue = e.target.value;
+                  }
                   setValues((prev) => ({
                     ...prev,
-                    [field.id]: field.type === "number" ? Number(e.target.value) : e.target.value,
-                  }))
-                }
+                    [field.id]: newValue,
+                  }));
+                }}
               />
             )}
             {field.id === "budget" && (

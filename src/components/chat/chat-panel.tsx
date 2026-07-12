@@ -27,6 +27,9 @@ export function ChatPanel() {
     void send(text);
   }
 
+  // Check if there's a clarification prompt in the display
+  const hasClarification = display.some((msg) => msg.kind === "clarification");
+
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
       <AnimatePresence initial={false}>
@@ -77,18 +80,20 @@ export function ChatPanel() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex gap-2 sticky bottom-4">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Where do you want to go?"
-          disabled={pending}
-          className="h-12 rounded-full px-5 bg-card border-border"
-        />
-        <Button type="submit" size="icon" disabled={pending || !input.trim()} className="h-12 w-12 rounded-full flex-shrink-0">
-          <ArrowUp className="w-5 h-5" />
-        </Button>
-      </form>
+      {!hasClarification && (
+        <form onSubmit={handleSubmit} className="flex gap-2 sticky bottom-4">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Where do you want to go?"
+            disabled={pending}
+            className="h-12 rounded-full px-5 bg-card border-border"
+          />
+          <Button type="submit" size="icon" disabled={pending || !input.trim()} className="h-12 w-12 rounded-full flex-shrink-0">
+            <ArrowUp className="w-5 h-5" />
+          </Button>
+        </form>
+      )}
     </div>
   );
 }
