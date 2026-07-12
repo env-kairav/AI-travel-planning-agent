@@ -20,29 +20,38 @@ const CATEGORY_COLOR = {
   activities: "#ec4899",
 } as const;
 
-const CATEGORY_LABEL: Record<keyof typeof CATEGORY_COLOR, string> = {
-  flights: "Flights",
-  hotel: "Accommodation",
-  food: "Food & Dining",
-  local_transport: "Local Transport",
-  activities: "Activities",
+// The "flights" segment is really whatever mode_of_transport was chosen (see
+// budget-section.tsx's TRANSPORT_DISPLAY) — labeled dynamically so this chart
+// doesn't say "Flights" for a trip explicitly taken by train/bus/own vehicle.
+const TRANSPORT_LABEL: Record<string, string> = {
+  flight: "Flights",
+  train: "Train Tickets",
+  bus: "Bus Tickets",
+  own_vehicle: "Fuel & Tolls",
 };
 
 function formatInr(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
 }
 
-export function BudgetSplitChart({ cost }: { cost: CostSummary }) {
+export function BudgetSplitChart({ cost, modeOfTransport }: { cost: CostSummary; modeOfTransport?: string | null }) {
   const total = cost.total_inr;
   const tooltipId = useId();
   const [hovered, setHovered] = useState<string | null>(null);
+  const categoryLabel: Record<keyof typeof CATEGORY_COLOR, string> = {
+    flights: TRANSPORT_LABEL[modeOfTransport ?? "flight"] ?? TRANSPORT_LABEL.flight,
+    hotel: "Accommodation",
+    food: "Food & Dining",
+    local_transport: "Local Transport",
+    activities: "Activities",
+  };
 
   if (total <= 0) return null;
 
   const segments = (Object.keys(CATEGORY_COLOR) as (keyof typeof CATEGORY_COLOR)[])
     .map((key) => ({
       key,
-      label: CATEGORY_LABEL[key],
+      label: categoryLabel[key],
       color: CATEGORY_COLOR[key],
       amount: cost.breakdown[key],
       pct: cost.breakdown[key] / total,
@@ -104,7 +113,7 @@ export function BudgetSplitChart({ cost }: { cost: CostSummary }) {
         {hovered && (
           <p className="text-sm">
             <span className="font-bold text-foreground">{formatInr(segments.find((s) => s.key === hovered)!.amount)}</span>
-            <span className="text-muted-foreground"> · {CATEGORY_LABEL[hovered as keyof typeof CATEGORY_COLOR]}</span>
+            <span className="text-muted-foreground"> · {categoryLabel[hovered as keyof typeof CATEGORY_COLOR]}</span>
           </p>
         )}
       </div>

@@ -37,11 +37,17 @@ export function useChat() {
         // warning this used to trigger live). Do it here instead, once.
         try {
           const params = JSON.parse(res.reply) as ItineraryRedirectParams;
+          // The model emits adults/children separately, not a single
+          // "travelers" count — computed here (not trusted from the model)
+          // so the total is never wrong due to LLM arithmetic.
+          const adults = Number(params.adults) || 2;
+          const children = Number(params.children) || 0;
           const qs = new URLSearchParams({
             destination: params.destination,
             days: String(params.days),
             budget: String(params.budget),
-            travelers: String(params.travelers),
+            travelers: String(adults + children),
+            children: String(children),
             traveler_type: params.traveler_type,
             autostart: "true",
           });

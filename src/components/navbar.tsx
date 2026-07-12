@@ -21,6 +21,12 @@ export function Navbar() {
           <Link href="/profile" className="hover:text-foreground transition-colors">
             Profile
           </Link>
+          <Link href="/architecture" className="hover:text-foreground transition-colors">
+            How it works
+          </Link>
+          <Link href="/pitch" className="hover:text-foreground transition-colors">
+            Pitch
+          </Link>
         </nav>
       </div>
     </header>

@@ -106,6 +106,9 @@ export type ItineraryPlanRequest = {
   origin_city?: string | null;
   past_history?: string[];
   mode_of_transport?: string | null;
+  /** How many of `travelers` are children — doesn't change the headcount
+   *  math, purely a signal for family-friendly activity selection/pacing. */
+  children?: number;
 };
 
 export function getItineraryPlan(req: ItineraryPlanRequest): Promise<ItineraryPlanResponse> {

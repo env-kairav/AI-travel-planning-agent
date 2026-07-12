@@ -1,4 +1,4 @@
-import { Bed, Car, Plane, ShoppingBag, Ticket, Utensils } from "lucide-react";
+import { Bed, Bus, Car, CarFront, Plane, ShoppingBag, Ticket, Train, Utensils } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import type { AccommodationOption, CostSummary } from "@/lib/types";
 import { AccommodationPicker } from "./accommodation-picker";
@@ -9,22 +9,38 @@ function formatInr(n: number): string {
   return `₹${Math.round(n).toLocaleString("en-IN")}`;
 }
 
+// The "flights" breakdown line is actually whatever mode_of_transport was
+// chosen (estimate_trip_cost applies a per-mode multiplier to the same line
+// item rather than adding a separate one) — confirmed live this was
+// confusing: picking "train" still showed a "Flights: ₹X" card, which reads
+// as if the choice was silently ignored even though the number itself was
+// correctly discounted.
+const TRANSPORT_DISPLAY: Record<string, { icon: typeof Plane; label: string; sub: string }> = {
+  flight: { icon: Plane, label: "Flights", sub: "Round trip, per group" },
+  train: { icon: Train, label: "Train Tickets", sub: "Round trip, per group" },
+  bus: { icon: Bus, label: "Bus Tickets", sub: "Round trip, per group" },
+  own_vehicle: { icon: CarFront, label: "Fuel & Tolls", sub: "Own vehicle, round trip" },
+};
+
 export function BudgetSection({
   cost,
   hotelName,
   days,
+  modeOfTransport,
   accommodationOptions,
   onSwapAccommodation,
 }: {
   cost: CostSummary;
   hotelName: string | null;
   days: number;
+  modeOfTransport?: string | null;
   accommodationOptions?: AccommodationOption[];
   onSwapAccommodation?: (option: AccommodationOption) => void;
 }) {
   const nights = Math.max(days - 1, 0);
+  const transport = TRANSPORT_DISPLAY[modeOfTransport ?? "flight"] ?? TRANSPORT_DISPLAY.flight;
   const cards = [
-    { icon: Plane, label: "Flights", sub: "Round trip, per group", amount: cost.breakdown.flights },
+    { icon: transport.icon, label: transport.label, sub: transport.sub, amount: cost.breakdown.flights },
     { icon: Bed, label: "Accommodation", sub: `${hotelName ?? "Hotel"} · ${nights} nights`, amount: cost.breakdown.hotel },
     { icon: Utensils, label: "Food & Dining", sub: `${days} days of meals`, amount: cost.breakdown.food },
     { icon: Car, label: "Local Transport", sub: "Cabs, transfers", amount: cost.breakdown.local_transport },
@@ -52,7 +68,7 @@ export function BudgetSection({
         ))}
       </div>
 
-      <BudgetSplitChart cost={cost} />
+      <BudgetSplitChart cost={cost} modeOfTransport={modeOfTransport} />
 
       <Card className="mt-8 p-8 border-primary/30 bg-gradient-to-r from-primary/5 to-transparent pulse-glow flex flex-col md:flex-row items-center justify-between gap-4">
         <div>

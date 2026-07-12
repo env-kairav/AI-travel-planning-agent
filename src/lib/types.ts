@@ -41,7 +41,12 @@ export type ItineraryRedirectParams = {
   destination: string;
   days: number;
   budget: number;
-  travelers: number;
+  /** Emitted separately, not as a single "travelers" count — the frontend
+   *  computes travelers = adults + children rather than trusting LLM math. */
+  adults: number;
+  children: number;
+  /** Free text describing what the traveler wants to explore/do, not a fixed
+   *  enum (e.g. "relaxing beach time with some hiking"). */
   traveler_type: string;
   travel_start_date: string | null;
   /** Frequently null even when the user names an origin city — the LLM often
@@ -219,6 +224,10 @@ export type ItineraryPlan = {
   budget: number;
   travelers: number;
   traveler_type: string;
+  /** Absent on cached plans saved before this field existed — treat as 0. */
+  children?: number;
+  /** Absent on cached plans saved before this field existed — treat as "flight". */
+  mode_of_transport?: string | null;
   travel_start_date: string | null;
   hotel: string | null;
   hotel_image_url: string;

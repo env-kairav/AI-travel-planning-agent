@@ -43,7 +43,7 @@ export function ReadOnlySavedItinerary({ saved }: { saved: SavedItinerary }) {
         </div>
       </section>
       <DayTimeline days={content.days} />
-      <BudgetSection cost={plan.cost_summary} hotelName={plan.hotel} days={plan.days} />
+      <BudgetSection cost={plan.cost_summary} hotelName={plan.hotel} days={plan.days} modeOfTransport={plan.mode_of_transport} />
       <TipsSection tips={content.tips} destination={plan.destination} />
       <PackingSection packing={content.packing} savedId={saved.id} initialState={saved.packing_state} />
       <SourcesSection sources={plan.sources} />
