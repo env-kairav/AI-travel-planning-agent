@@ -14,6 +14,15 @@ import {
 } from "@/components/ui/select";
 import type { ClarificationPrompt } from "@/lib/types";
 
+// `<input type="date">`'s value is always yyyy-mm-dd regardless of display
+// locale, so this is a plain string split — no Date object / timezone
+// involved, which also sidesteps the classic UTC-vs-local off-by-one-day trap.
+function formatDateDDMMYYYY(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-");
+  if (!y || !m || !d) return isoDate;
+  return `${d}/${m}/${y}`;
+}
+
 export function ClarificationForm({
   prompt,
   onSubmit,
@@ -63,8 +72,8 @@ export function ClarificationForm({
               <Input
                 id={field.id}
                 type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-                placeholder={field.type === "date" ? "dd/mm/yyyy" : (field.placeholder ?? undefined)}
-                min={field.type === "number" && field.id === "days" ? "1" : (field.min ?? undefined)}
+                placeholder={field.placeholder ?? undefined}
+                min={field.min ?? undefined}
                 max={field.max ?? undefined}
                 value={values[field.id] ?? ""}
                 onChange={(e) => {
@@ -75,15 +84,15 @@ export function ClarificationForm({
                       newValue = "";
                     } else {
                       const numValue = Number(e.target.value);
-                      // Specific validation: "days" field should not allow 0
-                      if (field.id === "days" && numValue === 0 && e.target.value !== "") {
-                        return; // Don't update state if trying to enter 0
+                      // Reject anything below the field's own minimum (days/travelers
+                      // both come through as min:1 — 0 travelers/days is nonsensical
+                      // and 0 travelers crashes the backend's per-person cost division)
+                      // rather than special-casing "days" alone as before.
+                      if (field.min != null && numValue < field.min) {
+                        return;
                       }
                       newValue = numValue;
                     }
-                  } else if (field.type === "date" && e.target.value) {
-                    // Keep date value as is
-                    newValue = e.target.value;
                   }
                   setValues((prev) => ({
                     ...prev,
@@ -91,6 +100,17 @@ export function ClarificationForm({
                   }));
                 }}
               />
+            )}
+            {field.type === "date" && typeof values[field.id] === "string" && values[field.id] !== "" && (
+              // Native <input type="date"> ignores `placeholder` entirely and
+              // displays/parses using the browser/OS locale's own date format
+              // (which may not be dd/mm/yyyy) — there's no HTML attribute that
+              // can force that. This confirmation line is the reliable fix: it
+              // always renders the same unambiguous dd/mm/yyyy regardless of
+              // what the native picker itself shows.
+              <p className="text-xs text-muted-foreground">
+                Selected: {formatDateDDMMYYYY(values[field.id] as string)}
+              </p>
             )}
             {field.id === "budget" && (
               <p className="text-xs text-muted-foreground">
