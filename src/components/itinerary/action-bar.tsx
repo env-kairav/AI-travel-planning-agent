@@ -44,6 +44,7 @@ export function ItineraryActionBar({
         budget: plan.budget,
         travelers: plan.travelers,
         traveler_type: plan.traveler_type,
+        trip_purpose: plan.trip_purpose,
         cover_image_url: plan.hotel_image_url,
         plan_json: plan,
         is_public: false,

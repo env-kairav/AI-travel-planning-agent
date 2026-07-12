@@ -48,6 +48,8 @@ export type ItineraryRedirectParams = {
   /** Free text describing what the traveler wants to explore/do, not a fixed
    *  enum (e.g. "relaxing beach time with some hiking"). */
   traveler_type: string;
+  /** Coarse "who's this for" — personal/honeymoon/romantic_getaway/solo/corporate. */
+  trip_purpose?: string | null;
   travel_start_date: string | null;
   /** Frequently null even when the user names an origin city — the LLM often
    *  skips search_flights entirely. Default to "Your City" in the UI. */
@@ -228,6 +230,8 @@ export type ItineraryPlan = {
   children?: number;
   /** Absent on cached plans saved before this field existed — treat as "flight". */
   mode_of_transport?: string | null;
+  /** Coarse "who's this for" — personal/honeymoon/romantic_getaway/solo/corporate. */
+  trip_purpose?: string | null;
   travel_start_date: string | null;
   hotel: string | null;
   hotel_image_url: string;

@@ -109,6 +109,8 @@ export type ItineraryPlanRequest = {
   /** How many of `travelers` are children — doesn't change the headcount
    *  math, purely a signal for family-friendly activity selection/pacing. */
   children?: number;
+  /** Coarse "who's this for" — personal/honeymoon/romantic_getaway/solo/corporate. */
+  trip_purpose?: string | null;
 };
 
 export function getItineraryPlan(req: ItineraryPlanRequest): Promise<ItineraryPlanResponse> {
@@ -187,8 +189,27 @@ export async function downloadItineraryCalendar(plan: unknown): Promise<Blob> {
 
 // ─── Destinations / hotels / restaurants / attractions ──────────────────
 
-export function getDestinations(): Promise<Destination[]> {
-  return request<Destination[]>("/api/destinations");
+export type DestinationsPage = { data: Destination[]; total: number; has_more: boolean };
+
+export function getDestinations(params?: {
+  search?: string;
+  category?: string;
+  purpose?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<DestinationsPage> {
+  const qs = new URLSearchParams();
+  if (params?.search) qs.set("search", params.search);
+  if (params?.category) qs.set("category", params.category);
+  if (params?.purpose) qs.set("purpose", params.purpose);
+  if (params?.limit != null) qs.set("limit", String(params.limit));
+  if (params?.offset != null) qs.set("offset", String(params.offset));
+  const query = qs.toString();
+  return request<DestinationsPage>(`/api/destinations${query ? `?${query}` : ""}`);
+}
+
+export function getDestinationsMeta(): Promise<{ categories: string[]; purposes: string[] }> {
+  return request("/api/destinations/meta");
 }
 
 export function getDestination(id: string): Promise<Destination> {
@@ -247,6 +268,7 @@ export type SaveItineraryRequest = {
   budget?: number;
   travelers?: number;
   traveler_type?: string;
+  trip_purpose?: string | null;
   cover_image_url?: string;
   plan_json?: unknown;
   is_public?: boolean;

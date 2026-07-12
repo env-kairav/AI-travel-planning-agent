@@ -12,16 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import type { ClarificationPrompt } from "@/lib/types";
-
-// `<input type="date">`'s value is always yyyy-mm-dd regardless of display
-// locale, so this is a plain string split — no Date object / timezone
-// involved, which also sidesteps the classic UTC-vs-local off-by-one-day trap.
-function formatDateDDMMYYYY(isoDate: string): string {
-  const [y, m, d] = isoDate.split("-");
-  if (!y || !m || !d) return isoDate;
-  return `${d}/${m}/${y}`;
-}
 
 export function ClarificationForm({
   prompt,
@@ -68,10 +60,16 @@ export function ClarificationForm({
                   ))}
                 </SelectContent>
               </Select>
+            ) : field.type === "date" ? (
+              <DatePicker
+                id={field.id}
+                value={typeof values[field.id] === "string" ? (values[field.id] as string) : null}
+                onChange={(iso) => setValues((prev) => ({ ...prev, [field.id]: iso }))}
+              />
             ) : (
               <Input
                 id={field.id}
-                type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+                type={field.type === "number" ? "number" : "text"}
                 placeholder={field.placeholder ?? undefined}
                 min={field.min ?? undefined}
                 max={field.max ?? undefined}
@@ -100,17 +98,6 @@ export function ClarificationForm({
                   }));
                 }}
               />
-            )}
-            {field.type === "date" && typeof values[field.id] === "string" && values[field.id] !== "" && (
-              // Native <input type="date"> ignores `placeholder` entirely and
-              // displays/parses using the browser/OS locale's own date format
-              // (which may not be dd/mm/yyyy) — there's no HTML attribute that
-              // can force that. This confirmation line is the reliable fix: it
-              // always renders the same unambiguous dd/mm/yyyy regardless of
-              // what the native picker itself shows.
-              <p className="text-xs text-muted-foreground">
-                Selected: {formatDateDDMMYYYY(values[field.id] as string)}
-              </p>
             )}
             {field.id === "budget" && (
               <p className="text-xs text-muted-foreground">
