@@ -22,6 +22,20 @@ function formatOptionLabel(opt: string): string {
   return opt.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Whether a field's current value violates its own min/max — used both to
+// show an inline error and to block submit, instead of the old approach of
+// silently rejecting/reverting each keystroke that produced an intermediate
+// value below min (confirmed live: that made typing "5000" into a min:500
+// field character-by-character get stuck oscillating around 500, since "5"
+// and "50" were rejected outright before the digits could add up).
+function fieldError(field: ClarificationPrompt["fields"][number], value: string | number | undefined): string | null {
+  if (field.type !== "number" || value === undefined || value === "") return null;
+  const num = Number(value);
+  if (field.min != null && num < field.min) return `Must be at least ${field.min}`;
+  if (field.max != null && num > field.max) return `Must be at most ${field.max}`;
+  return null;
+}
+
 export function ClarificationForm({
   prompt,
   onSubmit,
@@ -33,7 +47,9 @@ export function ClarificationForm({
 }) {
   const [values, setValues] = useState<Record<string, string | number>>({});
 
-  const canSubmit = prompt.fields.every((f) => values[f.id] !== undefined && values[f.id] !== "");
+  const canSubmit = prompt.fields.every(
+    (f) => values[f.id] !== undefined && values[f.id] !== "" && fieldError(f, values[f.id]) === null,
+  );
 
   return (
     <Card className="p-5 border-primary/20">
@@ -82,29 +98,23 @@ export function ClarificationForm({
                 max={field.max ?? undefined}
                 value={values[field.id] ?? ""}
                 onChange={(e) => {
-                  let newValue: string | number = e.target.value;
-                  if (field.type === "number") {
-                    // Allow empty string for clearing the field
-                    if (e.target.value === "") {
-                      newValue = "";
-                    } else {
-                      const numValue = Number(e.target.value);
-                      // Reject anything below the field's own minimum (days/travelers
-                      // both come through as min:1 — 0 travelers/days is nonsensical
-                      // and 0 travelers crashes the backend's per-person cost division)
-                      // rather than special-casing "days" alone as before.
-                      if (field.min != null && numValue < field.min) {
-                        return;
-                      }
-                      newValue = numValue;
-                    }
-                  }
+                  // Numbers are stored and validated after the fact (see
+                  // fieldError) rather than rejected keystroke-by-keystroke —
+                  // an out-of-range value is shown as an error, not silently
+                  // reverted, so typing a multi-digit number never gets stuck
+                  // on an intermediate value that happens to be below min.
+                  const newValue: string | number = field.type === "number" && e.target.value !== ""
+                    ? Number(e.target.value)
+                    : e.target.value;
                   setValues((prev) => ({
                     ...prev,
                     [field.id]: newValue,
                   }));
                 }}
               />
+            )}
+            {fieldError(field, values[field.id]) && (
+              <p className="text-xs text-destructive">{fieldError(field, values[field.id])}</p>
             )}
             {field.id === "budget" && (
               <p className="text-xs text-muted-foreground">
