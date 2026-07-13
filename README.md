@@ -5,7 +5,6 @@ FastAPI backend — a chat-driven interface for planning trips, with a rich inte
 itinerary view (map, day-by-day timeline, budget breakdown, packing checklist).
 
 ## Stack
-
 | Layer | Choice |
 |---|---|
 | Framework | Next.js (App Router) + TypeScript |
