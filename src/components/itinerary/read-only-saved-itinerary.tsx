@@ -35,7 +35,7 @@ export function ReadOnlySavedItinerary({ saved }: { saved: SavedItinerary }) {
 
   return (
     <div>
-      <ItineraryHero plan={plan} originCity="Your City" />
+      <ItineraryHero plan={plan} originCity={plan.origin_city ?? "Your City"} />
       <section className="max-w-6xl mx-auto px-6 py-20 print:hidden">
         <SectionHeading eyebrow="Interactive map" title="All Locations at a Glance" />
         <div className="mt-10">

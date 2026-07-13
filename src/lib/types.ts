@@ -249,6 +249,10 @@ export type ItineraryPlan = {
   /** null for domestic trips; absent on cached plans saved before this field
    * existed — both cases should render as "not applicable," not "loading." */
   travel_essentials?: TravelEssentials | null;
+  /** Absent on cached/saved plans from before this field existed, and null
+   * whenever the trip was planned without an origin — both cases should fall
+   * back to a generic label, never render as literally "null"/"undefined". */
+  origin_city?: string | null;
   format: "structured_plan";
 };
 
